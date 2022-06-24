@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'email_logs',
     'oauth',
+    'attachment',
 ]
 
 MIDDLEWARE = [
