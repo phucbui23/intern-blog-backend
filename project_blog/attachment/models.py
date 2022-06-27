@@ -9,7 +9,7 @@ from utils.enums import Attachment_type
 
 class Attachment(models.Model):
     uid = models.CharField(
-        default=uuid.uuid4(),
+        default=uuid.uuid4,
         primary_key=True,
         editable=False, 
         unique=True, 
