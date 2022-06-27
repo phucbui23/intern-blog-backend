@@ -1,5 +1,3 @@
-from pickle import FALSE, TRUE
-from turtle import back
 from django.db import models
 import uuid
 from user_account.models import User
