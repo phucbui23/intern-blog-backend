@@ -56,14 +56,14 @@ class UserDeviceToken(models.Model):
 
 class UserActivation(models.Model):
     author = models.ForeignKey(
-        to=User, 
+        to= User, 
         unique=True, 
         on_delete=models.CASCADE,
         to_field='id',
         related_name='user_activation_fk_author',
         db_column='author_id',
         db_constraint=False,
-        null=False,
+        null= False,
         blank=False,
     )
 
@@ -84,9 +84,9 @@ class UserActivation(models.Model):
         blank=True,
     )
 
-class ResetPassword():
+class ResetPassWord(models.Model):
     author = models.ForeignKey(
-        to=User, 
+        to= User, 
         unique=True, 
         on_delete=models.CASCADE,
         to_field='id',

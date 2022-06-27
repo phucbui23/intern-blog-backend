@@ -5,11 +5,53 @@ from utils.enums import Status
 #from attachment.models import Attachment
 # Create your models here.
 
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
-class User(models.Model):
-    REQUIRED_FIELDS = ['status', 'active', 'created_at', 'is_superuser', 'is_admin']
-    username = models.CharField(max_length=255)
-    password = models.CharField(max_length=255)
+class UserManager(BaseUserManager):
+    def create_user(self, username, password=None):
+        """
+        Creates and saves a User with the given email and password.
+        """
+        if not username:
+            raise ValueError('Users must have an email address')
+        user = self.model(
+            username=username,
+        )
+        user.set_password(password)
+        user.is_superuser = False
+        user.is_admin = False
+        user.active = False
+        user.save(using=self._db)
+        return user
+    def create_staffuser(self, username, password):
+        """
+        Creates and saves a staff user with the given email and password.
+        """
+        user = self.create_user(
+            password=password,
+            username=username,
+        )
+        user.is_admin = True
+        user.save(using=self._db)
+        return user
+    def create_superuser(self, username, password):
+        """
+        Creates and saves a superuser with the given email and password.
+        """
+        user = self.create_user(
+            password=password,
+            username=username,
+        )
+        user.is_superuser = True
+        user.is_admin = True
+        user.active = True
+        user.save(using=self._db)
+        return user
+class User(AbstractBaseUser):
+    objects = UserManager()
+    REQUIRED_FIELD = ('username',)
+    USERNAME_FIELD = 'username'
+    username = models.CharField(max_length=255, unique=True)
     email = models.CharField(
         max_length=255, 
         null=True, 
@@ -28,7 +70,6 @@ class User(models.Model):
     nick_name = models.CharField(
         max_length=255, 
         null=True,
-        blank=True,
     )
     quote = models.TextField(
         null=True,
@@ -67,6 +108,16 @@ class User(models.Model):
     )
     is_superuser = models.BooleanField()
     is_admin = models.BooleanField()
+
+    @property
+    def is_staff(self):
+        return self.is_admin
+
+    def has_perm(self, perm, obj=None):
+        return True
+
+    def has_module_perms(self, perm, obj=None):
+        return True
 
 
 class Follower(models.Model):
