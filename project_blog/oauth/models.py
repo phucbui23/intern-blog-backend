@@ -84,7 +84,7 @@ class UserActivation(models.Model):
         blank=True,
     )
 
-class ResetPassword():
+class ResetPassword(models.Model):
     author = models.ForeignKey(
         to=User, 
         unique=True, 

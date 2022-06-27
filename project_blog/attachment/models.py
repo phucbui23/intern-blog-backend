@@ -30,7 +30,7 @@ class Attachment(models.Model):
     type = models.CharField(
         max_length=32, 
         choices=Attachment_type.choices, 
-        default=Attachment_type.AVA,
+        default=Attachment_type.AVATAR,
     )
 
     file_name = models.CharField(
