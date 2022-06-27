@@ -1,5 +1,5 @@
 from django.db import models
-
+from user_account.models import User
 
 # Create your models here.
 class UserDeviceToken(models.Model):
