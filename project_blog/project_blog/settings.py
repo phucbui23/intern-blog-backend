@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'notification',
     'tag',
-    'django.contrib.staticfiles',    
     'blog',
     'user_account',
     'email_logs',
