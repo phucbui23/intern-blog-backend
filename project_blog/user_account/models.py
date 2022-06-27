@@ -1,12 +1,13 @@
 from django.db import models
 from utils.enums import Gender
 from utils.enums import Status
-from blog.models import Blog
-from attachment.models import Attachment
+#from blog.models import Blog
+#from attachment.models import Attachment
 # Create your models here.
 
 
 class User(models.Model):
+    REQUIRED_FIELDS = ['status', 'active', 'created_at', 'is_superuser', 'is_admin']
     username = models.CharField(max_length=255)
     password = models.CharField(max_length=255)
     email = models.CharField(
@@ -41,7 +42,7 @@ class User(models.Model):
         default=Gender.OTHER,
     )
     avatar = models.ForeignKey(
-        to=Attachment,
+        to='attachment.Attachment',
         on_delete=models.CASCADE,
         to_field='uid',
         related_name='user_fk_avatar',
@@ -90,7 +91,7 @@ class Follower(models.Model):
         blank=False,
     )
     follow_by = models.ForeignKey(
-        to=Blog,
+        to='blog.Blog',
         on_delete=models.CASCADE,
         to_field='uid',
         related_name='follower_fk_follower_by',
