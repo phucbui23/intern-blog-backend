@@ -5,7 +5,7 @@ from user_account.models import User
 
 class Blog(models.Model):
     uid = models.UUIDField(
-        default=uuid.uuid4(),
+        default=uuid.uuid4,
         primary_key=True,
         editable=False, 
         unique=True, 
