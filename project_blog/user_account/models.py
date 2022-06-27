@@ -1,27 +1,69 @@
 from django.db import models
 from utils.enums import Gender
-
+from utils.enums import Status
+from blog.models import Blog
+from attachment.models import Attachment
 # Create your models here.
 
 
 class User(models.Model):
-    GENDER_TYPES = (('Female', 'Female'), ('Male', 'Male'), ('Other', 'Other'))
-    STATUS_TYPES = (('AVAILABLE', 'AVAILABLE'),
-                    ('LOCKED', 'LOCKED'), ('REMOVED', 'REMOVED'))
     username = models.CharField(max_length=255)
     password = models.CharField(max_length=255)
-    email = models.CharField(max_length=255, null=True, blank=True)
-    phone_number = models.CharField(max_length=16, null=True)
-    full_name = models.CharField(max_length=255, null=True)
-    nick_name = models.CharField(max_length=255, null=True)
-    quote = models.TextField(null=True)
-    gender = models.CharField(max_length=12, null=True,
-                              choices=Gender.choices, default=Gender.OTHER)
-    # avatar = models.ForeignKey('Attachment', null=True, on_delete=models.CASCADE)
-    status = models.CharField(max_length=16)
+    email = models.CharField(
+        max_length=255, 
+        null=True, 
+        blank=True,
+    )
+    phone_number = models.CharField(
+        max_length=16, 
+        null=True,
+        blank=True,
+    )
+    full_name = models.CharField(
+        max_length=255, 
+        null=True,
+        blank=True,
+    )
+    nick_name = models.CharField(
+        max_length=255, 
+        null=True,
+        blank=True,
+    )
+    quote = models.TextField(
+        null=True,
+        blank=True,
+    )
+    gender = models.CharField(
+        max_length=12,
+        null=True,
+        blank=True,
+        choices=Gender.choices, 
+        default=Gender.OTHER,
+    )
+    avatar = models.ForeignKey(
+        to=Attachment,
+        on_delete=models.CASCADE,
+        to_field='uid',
+        related_name='user_fk_avatar',
+        db_column='avatar_uid',
+        db_constraint=False,
+        null=True,
+        blank=True,
+    )
+    status = models.CharField(
+        max_length=16,
+        choices=Status.choices, 
+        default=Status.AVAILABLE,
+    )
     active = models.BooleanField()
-    created_at = models.DateTimeField(null=True, blank=True)
-    updated_at = models.DateTimeField(null=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, 
+        null=True, 
+        blank=True,
+    )
     is_superuser = models.BooleanField()
     is_admin = models.BooleanField()
 
@@ -38,11 +80,31 @@ class Follower(models.Model):
         blank=False,
     )
     follower = models.ForeignKey(
-        User,
+        to=User,
         on_delete=models.CASCADE,
+        to_field='id',
         related_name='follower_fk_follower',
+        db_column='follower_id',
+        db_constraint=False,
+        null=False,
+        blank=False,
     )
-    # follow_by = models.ForeignKey(to='Blog', null=True, on_delete=models.CASCADE)
+    follow_by = models.ForeignKey(
+        to=Blog,
+        on_delete=models.CASCADE,
+        to_field='uid',
+        related_name='follower_fk_follower_by',
+        db_column='follower_by_uid',
+        db_constraint=False,
+        null=True,
+        blank=True,
+    )
     active = models.BooleanField()
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField(null=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, 
+        null=True, 
+        blank=True,
+    )

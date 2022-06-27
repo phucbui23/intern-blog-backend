@@ -1,17 +1,29 @@
 from django.db import models
-
+from utils.enums import Type
+from user_account.models import User
 # Create your models here.
 
 
 class EmailLogs(models.Model):
-    TYPE_VALUES = [
-        ('ACTIVATE', 'ACTIVATE'), 
-        ('RESET_PASSWORD','RESET_PASSWORD'), 
-        ('FOLLOWER_POST', 'FOLLOWER_POST'),
-    ]
-    # author = models.ForeignKey(User, on_delete=models.CASCADE)
-    type = models.TextField(choices=TYPE_VALUES)
+    author = models.ForeignKey(
+        to=User,
+        on_delete=models.CASCADE,
+        to_field='id',
+        related_name='email_logs_fk_author',
+        db_column='author_id',
+        db_constraint=False,
+        null=False,
+        blank=False,
+    )
+    type = models.TextField(
+        choices=Type.choices, 
+        default=Type.ACTIVATE,
+    )
     subject = models.TextField()
     content = models.TextField()
     is_success = models.BooleanField()
-    sended_at = models.DateTimeField(null=True)
+    sended_at = models.DateTimeField(
+        auto_now=True, 
+        null=True, 
+        blank=True,
+    )

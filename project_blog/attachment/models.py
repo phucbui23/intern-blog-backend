@@ -48,7 +48,7 @@ class Attachment(models.Model):
         blank=True,
     )
 
-    delete = models.BooleanField()
+    is_delete = models.BooleanField()
 
     created_at = models.DateTimeField(
         auto_now_add=True
