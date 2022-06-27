@@ -2,6 +2,7 @@ from django.db import models
 import uuid
 from user_account.models import User
 
+
 class Blog(models.Model):
     uid = models.UUIDField(
         default=uuid.uuid4(),
