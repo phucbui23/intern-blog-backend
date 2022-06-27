@@ -1,5 +1,5 @@
-from plistlib import UID
 from django.db import models
+
 
 class Blog(models.Model):
     uid = models.UUIDField(
@@ -24,8 +24,10 @@ class BlogHistory(models.Model):
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField(null=True)
 
-    # class Meta:
-    #     unique_together = ('blog', 'revision',)
+    class Meta:
+        unique_together = (
+            ('blog', 'revision',),
+        )
 
 
 class BlogLike(models.Model):
