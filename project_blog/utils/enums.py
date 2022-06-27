@@ -22,5 +22,5 @@ class Type(models.TextChoices):
 
 @unique
 class Attachment_type(models.TextChoices):
-    AVA = 'AVATAR'
-    CVR = 'BLOG_COVER'
+    AVATAR = 'AVATAR'
+    COVER = 'BLOG_COVER'
