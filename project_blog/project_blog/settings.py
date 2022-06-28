@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     'email_logs',
     'oauth',
     'attachment',
-    'rest_framework',
 ]
 
 MIDDLEWARE = [
