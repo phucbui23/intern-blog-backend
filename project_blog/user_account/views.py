@@ -1,7 +1,4 @@
-from pickle import PUT
 from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
 
 from user_account.models import User, Follower
 from user_account.serializers import UserSerialier, FollowerSerializer
@@ -31,8 +28,8 @@ def get_list_user(request):
         many = True).data
 
 
-@api_view([PUT])
-@json_response
+# @api_view([PUT])
+# @json_response
 
 @api_view(['POST'])
 def create_follower(request): ...
