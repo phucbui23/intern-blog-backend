@@ -70,6 +70,7 @@ class User(AbstractBaseUser):
     nick_name = models.CharField(
         max_length=255,
         null=True,
+        blank = True,
     )
     quote = models.TextField(
         null=True,
@@ -97,7 +98,7 @@ class User(AbstractBaseUser):
         choices=Status.choices,
         default=Status.AVAILABLE,
     )
-    active = models.BooleanField()
+    active = models.BooleanField(default= False)
     created_at = models.DateTimeField(
         auto_now_add=True,
     )
@@ -106,8 +107,8 @@ class User(AbstractBaseUser):
         null=True,
         blank=True,
     )
-    is_superuser = models.BooleanField()
-    is_admin = models.BooleanField()
+    is_superuser = models.BooleanField(default= False)
+    is_admin = models.BooleanField(default= False)
 
     @property
     def is_staff(self):

@@ -1,4 +1,3 @@
-from dataclasses import field
 from rest_framework import serializers
 from user_account.models import User, Follower
 
@@ -7,17 +6,9 @@ class UserSerialier(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email', 'phone_number',
-                  'full_name', 'nick_name', 'quote',)
+                  'full_name', 'nick_name', 'quote','avatar',)
         read_only_fields = fields
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        follower = Follower.objects.filter(
-            user=instance
-        )
-        data['follower'] = FollowerSerializer(follower, many=True).data
-
-        return data
 
 
 class FollowerSerializer(serializers.ModelSerializer):
