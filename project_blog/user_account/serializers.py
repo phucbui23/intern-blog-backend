@@ -13,7 +13,7 @@ class UserSerialier(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         follower = Follower.objects.filter(
-            user=instance
+            author=instance
         )
         data['follower'] = FollowerSerializer(follower, many=True).data
 
