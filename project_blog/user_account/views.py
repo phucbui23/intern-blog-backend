@@ -2,19 +2,10 @@ from email import message
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from user_account.serializers import WriteUseSerializer
-
+from utils.api_decorator import json_response
 from user_account.models import User, Follower
 from user_account.serializers import UserSerialier, FollowerSerializer
 # Create your views here.
-
-
-try:
-    data = func(*arg,  **kwargs)
-
-    return Response({data: data, ...}, status=status.HTTP_200_OK)
-except ValueError as e:
-    return Response({data: None, error: 500, message: "Internal Server Error"}, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
