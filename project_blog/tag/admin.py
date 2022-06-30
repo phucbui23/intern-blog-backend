@@ -5,6 +5,5 @@ from .models import Tag
 from .models import BlogTag
 
 
-
 admin.site.register(Tag)
 admin.site.register(BlogTag)

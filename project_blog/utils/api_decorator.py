@@ -19,8 +19,8 @@ def json_response(func):
                 {
                     "data": None, 
                     "error": 500, 
-                    "message": str(e)
+                    "message": e.message
                 }, 
                 status=status.HTTP_200_OK
-            )
+            )            
     return wrapper
