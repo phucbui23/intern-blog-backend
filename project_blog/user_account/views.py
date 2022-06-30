@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from utils.api_decorator import json_response
 from user_account.models import User, Follower
-from user_account.serializers import UserSerialier, FollowerSerializer
+from user_account.serializers import UserSerializer, FollowerSerializer
 # Create your views here.
 
 
@@ -20,7 +20,7 @@ def create_user(request):
     )
 
     data = {
-        "data": UserSerialier(
+        "data": UserSerializer(
             instance=user,
             many=False
         ).data,
