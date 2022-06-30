@@ -53,22 +53,22 @@ class User(AbstractBaseUser):
     USERNAME_FIELD = 'username'
     username = models.CharField(max_length=255, unique=True)
     email = models.CharField(
-        max_length=255, 
-        null=True, 
+        max_length=255,
+        null=True,
         blank=True,
     )
     phone_number = models.CharField(
-        max_length=16, 
+        max_length=16,
         null=True,
         blank=True,
     )
     full_name = models.CharField(
-        max_length=255, 
+        max_length=255,
         null=True,
         blank=True,
     )
     nick_name = models.CharField(
-        max_length=255, 
+        max_length=255,
         null=True,
     )
     quote = models.TextField(
@@ -79,7 +79,7 @@ class User(AbstractBaseUser):
         max_length=12,
         null=True,
         blank=True,
-        choices=Gender.choices, 
+        choices=Gender.choices,
         default=Gender.OTHER,
     )
     avatar = models.ForeignKey(
@@ -94,7 +94,7 @@ class User(AbstractBaseUser):
     )
     status = models.CharField(
         max_length=16,
-        choices=Status.choices, 
+        choices=Status.choices,
         default=Status.AVAILABLE,
     )
     active = models.BooleanField()
@@ -102,8 +102,8 @@ class User(AbstractBaseUser):
         auto_now_add=True,
     )
     updated_at = models.DateTimeField(
-        auto_now=True, 
-        null=True, 
+        auto_now=True,
+        null=True,
         blank=True,
     )
     is_superuser = models.BooleanField()
@@ -156,7 +156,7 @@ class Follower(models.Model):
         auto_now_add=True,
     )
     updated_at = models.DateTimeField(
-        auto_now=True, 
-        null=True, 
+        auto_now=True,
+        null=True,
         blank=True,
     )
