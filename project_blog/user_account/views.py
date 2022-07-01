@@ -29,7 +29,7 @@ def create_user(request):
     )
 
     data = {
-        "data": UserSerialier(
+        "data": UserSerializer(
             instance=user,
             many=False
         ).data,
