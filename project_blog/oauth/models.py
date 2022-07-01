@@ -35,6 +35,7 @@ class UserDeviceToken(models.Model):
     device_model = models.CharField(
         max_length=255, 
         null=True,
+        blank=True
     )
 
     user_agent = models.TextField(
@@ -42,7 +43,7 @@ class UserDeviceToken(models.Model):
         blank=True,
     )
 
-    active = models.BooleanField()
+    active = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -67,7 +68,7 @@ class UserActivation(models.Model):
         blank=False,
     )
 
-    active = models.BooleanField()
+    active = models.BooleanField(default= False)
 
     token = models.CharField(
         max_length=255, 
@@ -97,7 +98,7 @@ class ResetPassword(models.Model):
         blank=False,
     )
 
-    active = models.BooleanField()
+    active = models.BooleanField(default=False)
 
     token = models.CharField(
         max_length=255, 

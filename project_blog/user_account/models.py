@@ -49,13 +49,14 @@ class UserManager(BaseUserManager):
         return user
 class User(AbstractBaseUser):
     objects = UserManager()
-    REQUIRED_FIELD = ('username',)
-    USERNAME_FIELD = 'username'
+    REQUIRED_FIELD = ('email',)
+    USERNAME_FIELD = 'email'
     username = models.CharField(max_length=255, unique=True)
     email = models.CharField(
         max_length=255,
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
+        unique=True
     )
     phone_number = models.CharField(
         max_length=16,
