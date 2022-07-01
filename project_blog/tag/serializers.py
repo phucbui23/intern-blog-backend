@@ -4,9 +4,5 @@ from .models import Tag, BlogTag
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = "__all__"
-        
-class BlogTagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BlogTag
-        fields = "__all__"
+        fields = ('name', 'author', 'description',)
+        read_only_fields = fields
