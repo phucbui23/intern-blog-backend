@@ -14,11 +14,11 @@ def json_response(func):
                 status=status.HTTP_200_OK
             )
             
-        except ValueError as e:
+        except Exception as e:
             return Response(
                 {
                     "data": None, 
-                    "error": 500, 
+                    "error": e.code, 
                     "message": e.message
                 }, 
                 status=status.HTTP_200_OK
