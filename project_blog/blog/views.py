@@ -1,9 +1,7 @@
-# from django.http import JsonResponse
-from django.shortcuts import render
-from rest_framework import status
+from django.forms import ValidationError
 from rest_framework.decorators import api_view
-# from rest_framework.parsers import JSONParser
-from rest_framework.response import Response
+from user_account.models import User
+from utils.api_decorator import json_response
 
 from .models import Blog, BlogHistory, BlogLike
 from .serializers import (BlogHistorySerializer, BlogLikeSerializer,
@@ -12,28 +10,28 @@ from .serializers import (BlogHistorySerializer, BlogLikeSerializer,
 
 # Create your views here.
 @api_view(['POST'])
+@json_response
 def create_blog(request):
-    data = request.data
-    serializer = BlogSerializer(data=data)
-    if serializer.is_valid(raise_exception=True):
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+    data = request.POST.dict().copy()
+    username = data.pop('author', None)
 
-# @api_view(['POST'])
-# def create_blog_history(request):
-#     data = JSONParser().parse(request)
-#     serializer = BlogHistorySerializer(data=data)
-#     if serializer.is_valid():
-#         serializer.save()
-#         return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
-#     return JsonResponse(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        user = User.objects.get(
+            username=username,
+        )
+    except User.DoesNotExist:
+        raise ValidationError(
+            message="doesn't exist"
+        )
+                                                                                 
+    new_blog = Blog.objects.create(
+        **data,
+        author=user
+    )
 
-# @api_view(['POST'])
-# def create_blog_like(request):
-#     data = JSONParser().parse(request)
-#     serializer = BlogLikeSerializer(data=data)
-#     if serializer.is_valid():
-#         serializer.save()
-#         return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
-#     return JsonResponse(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+    data = BlogSerializer(
+        instance=new_blog,
+        many=False,
+    ).data
+    
+    return data

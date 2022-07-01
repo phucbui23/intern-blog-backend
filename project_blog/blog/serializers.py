@@ -6,31 +6,20 @@ from .models import Blog, BlogHistory, BlogLike
 class BlogSerializer(serializers.ModelSerializer):
     class Meta:
         model = Blog
-        fields = [
-            'uid',
-            'name',
-            'author',
-            'content',
-            'is_published',
-            'published_at',
-            'created_at',
-            'updated_at',
-        ]
-
+        fields = (
+            'uid', 'name', 'author',
+            'is_published', 'created_at',
+        )
+        read_only_field = fields
+            
 class BlogHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogHistory
-        fields = [
-            'blog',
-            'revision',
-            'author',
-            'name',
-            'content',
-            'is_published',
-            'published_at',
-            'created_at',
-            'updated_at',
-        ]
+        fields = (
+            'blog', 'revision', 'author',
+            'name', 'is_published', 'created_at',
+        )
+        read_only_field = fields
 
 class BlogLikeSerializer(serializers.ModelSerializer):
     class Meta:
