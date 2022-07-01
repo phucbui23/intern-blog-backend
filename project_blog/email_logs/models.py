@@ -21,7 +21,7 @@ class EmailLogs(models.Model):
     )
     subject = models.TextField()
     content = models.TextField()
-    is_success = models.BooleanField()
+    is_success = models.BooleanField(default=False)
     sended_at = models.DateTimeField(
         auto_now=True, 
         null=True, 

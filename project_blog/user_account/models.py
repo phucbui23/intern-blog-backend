@@ -49,13 +49,14 @@ class UserManager(BaseUserManager):
         return user
 class User(AbstractBaseUser):
     objects = UserManager()
-    REQUIRED_FIELD = ('username',)
-    USERNAME_FIELD = 'username'
+    REQUIRED_FIELD = ('email',)
+    USERNAME_FIELD = 'email'
     username = models.CharField(max_length=255, unique=True)
     email = models.CharField(
         max_length=255,
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
+        unique=True
     )
     phone_number = models.CharField(
         max_length=16,
@@ -70,6 +71,7 @@ class User(AbstractBaseUser):
     nick_name = models.CharField(
         max_length=255,
         null=True,
+        blank = True,
     )
     quote = models.TextField(
         null=True,
@@ -97,7 +99,7 @@ class User(AbstractBaseUser):
         choices=Status.choices,
         default=Status.AVAILABLE,
     )
-    active = models.BooleanField()
+    active = models.BooleanField(default= False)
     created_at = models.DateTimeField(
         auto_now_add=True,
     )
@@ -106,8 +108,8 @@ class User(AbstractBaseUser):
         null=True,
         blank=True,
     )
-    is_superuser = models.BooleanField()
-    is_admin = models.BooleanField()
+    is_superuser = models.BooleanField(default= False)
+    is_admin = models.BooleanField(default= False)
 
     @property
     def is_staff(self):
