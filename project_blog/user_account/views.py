@@ -6,7 +6,7 @@ from django.utils.encoding import force_str
 from rest_framework.decorators import api_view
 
 from user_account.models import User, Follower
-from user_account.serializers import UserSerialier, FollowerSerializer
+from user_account.serializers import UserSerializer, FollowerSerializer
 from utils.api_decorator import json_response
 from django.contrib.sites.shortcuts import get_current_site
 from django.shortcuts import redirect

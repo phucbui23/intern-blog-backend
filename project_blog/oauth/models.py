@@ -43,7 +43,9 @@ class UserDeviceToken(models.Model):
         blank=True,
     )
 
-    active = models.BooleanField(default=False)
+    active = models.BooleanField(
+        default=False,
+    )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -54,6 +56,11 @@ class UserDeviceToken(models.Model):
         blank=True,
         auto_now=True,
     )
+
+    class Meta:
+        unique_together = (
+            ('author', 'token',),
+        )
 
 class UserActivation(models.Model):
     author = models.ForeignKey(
@@ -68,7 +75,9 @@ class UserActivation(models.Model):
         blank=False,
     )
 
-    active = models.BooleanField(default= False)
+    active = models.BooleanField(
+        default=False,
+    )
 
     token = models.CharField(
         max_length=255, 
@@ -84,6 +93,11 @@ class UserActivation(models.Model):
         null=True,
         blank=True,
     )
+
+    class Meta:
+        unique_together= (
+            ('author', 'token',),
+        )
 
 class ResetPassword(models.Model):
     author = models.ForeignKey(
@@ -98,7 +112,9 @@ class ResetPassword(models.Model):
         blank=False,
     )
 
-    active = models.BooleanField(default=False)
+    active = models.BooleanField(
+        default=False,
+    )
 
     token = models.CharField(
         max_length=255, 
@@ -115,4 +131,7 @@ class ResetPassword(models.Model):
         blank=True,
     )
 
-
+    class Meta:
+        unique_together= (
+            ('author', 'token',),
+        )

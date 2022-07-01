@@ -2,7 +2,7 @@ from rest_framework import serializers
 from user_account.models import User, Follower
 
 
-class UserSerialier(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email', 'phone_number',
