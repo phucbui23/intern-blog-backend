@@ -66,7 +66,6 @@ def create_user(request):
         ).data
 
 
-
 @api_view(['GET'])
 def activate(request, uid, token):
     uid = force_str(urlsafe_base64_decode(uid))
