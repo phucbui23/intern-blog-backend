@@ -127,3 +127,37 @@ def log_in(request):
             many=False
         ).data
 
+
+@api_view(['PUT'])
+@json_response
+def edit_profile(request):
+    user = request.user
+    user.phone_number = request.POST.get('phone_number', None)
+    user.full_name = request.POST.get('full_name', None)
+    user.nick_name = request.POST.get('nick_name', None)
+    user.quote = request.POST.get('quote', None)
+    user.gender = request.POST.get('gender', None)
+    user.avatar = request.POST.get('avatar', None)
+    user.save()
+
+    return UserSerializer(
+        instance= user,
+        many = False
+    ).data
+
+@api_view(['PUT'])
+@json_response
+def change_password(request):
+    ...
+
+
+@api_view(['PUT'])
+@json_response
+def reset_password(request):
+    ...
+
+
+
+
+
+
