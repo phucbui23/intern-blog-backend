@@ -120,6 +120,9 @@ class User(AbstractBaseUser):
 
     def has_module_perms(self, perm, obj=None):
         return True
+    
+    def __str__(self) -> str:
+        return self.username
 
 
 class Follower(models.Model):
