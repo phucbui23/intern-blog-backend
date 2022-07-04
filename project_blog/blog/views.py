@@ -1,20 +1,18 @@
 from django.forms import ValidationError
-from django.shortcuts import render
-from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.response import Response
 from utils.api_decorator import json_response
 
 from .models import Blog, BlogHistory, BlogLike
-from .serializers import (BlogHistorySerializer, BlogLikeSerializer, BlogSerializer)
+from .serializers import BlogHistorySerializer, BlogLikeSerializer, BlogSerializer
 from user_account.models import User
-from tag.views import create_tag, create_blogtag, get_tag
+from tag.models import Tag, BlogTag
+from tag.serializers import TagSerializer
 
 
 @api_view(['POST'])
 @json_response
 def create_blog(request):
-    data = request.data.dict().copy()
+    data = request.data.copy()
     username = data.pop('author', None)
     tag = data.pop('tag', None)
     
@@ -31,13 +29,27 @@ def create_blog(request):
     new_blog = Blog.objects.create(
         **data,
         author=user,
-    )
+    )    
     
-    if tag != None:
+    if tag is not None:
         for x in tag:
-            ...
-            # create_tag()
-            # create_blogtag()
+            # get tag
+            tag_name = x.pop("name")
+            _tag = Tag.get_tag_by_name(tag_name)
+            
+            # if tag doesn't exist, have to create
+            if _tag is None:
+                _tag = Tag.objects.create(
+                    author=user,
+                    name=tag_name,
+                    description="",
+                )
+            
+            # create blogtag
+            blogtag = BlogTag.objects.create(
+                blog=new_blog,
+                tag=_tag,
+            )
     
     data = BlogSerializer(
         instance=new_blog, 
@@ -65,7 +77,7 @@ def get_blog(request):
 @api_view(['PUT'])
 @json_response
 def edit_blog(request):
-    data = request.data.dict().copy()
+    data = request.PUT.dict().copy()
     
     try:
         blog = Blog.objects.get(
