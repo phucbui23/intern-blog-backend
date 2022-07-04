@@ -1,3 +1,4 @@
+from xml.dom import ValidationErr
 from django.forms import ValidationError
 from rest_framework.decorators import api_view
 
@@ -148,7 +149,28 @@ def edit_profile(request):
 @api_view(['PUT'])
 @json_response
 def change_password(request):
-    ...
+    user = request.user
+    password = request.POST.get('password', None)
+    new_password = request.POST.get('new_password', None)
+    validate_password = request.POST.get('validate_password', None)
+
+    if not password or not new_password or not validate_password:
+        raise ValueError('Please fill all fields!!!')
+
+    if password != user.password:
+        raise ValueError('Wrong password')
+    
+    if new_password != validate_password:
+        raise ValueError('Validate password must be same as new password')
+    
+    user.set_password(new_password)
+    user.save()
+
+    return UserSerializer(
+        instance= user,
+        many = False
+    ).data
+    
 
 
 @api_view(['PUT'])
