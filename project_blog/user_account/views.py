@@ -1,29 +1,29 @@
+from xml.dom import ValidationErr
 from django.forms import ValidationError
-from django.utils.http import urlsafe_base64_encode
-from django.utils.http import urlsafe_base64_decode
-from django.utils.encoding import force_bytes
-from django.utils.encoding import force_str
 from rest_framework.decorators import api_view
 
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from user_account.models import User, Follower
 from user_account.serializers import UserSerializer, FollowerSerializer
 from utils.api_decorator import json_response
 from django.contrib.sites.shortcuts import get_current_site
-from django.shortcuts import redirect
 
 from utils.send_email import send_email
-from utils.token import token_generator
 from oauth.models import UserActivation
 from oauth.models import UserDeviceToken
 from email_logs.models import EmailLogs
 from oauth.serializers import UserDeviceTokenSerialier
+from oauth.serializers import UserActivationSerialier
+
+import jwt
+SECRET_KEY = 'django-insecure-cvkqf4x_zg5--)q6^o5z8nfwm!+$0v31co+dbr%vmm2oq_#a7x'
 
 # Create your views here.
 
 
 @api_view(['POST'])
 @json_response
-def create_user(request):
+def sign_up(request):
     username = request.POST.get('username', None)
     email = request.POST.get('email', None)
     password = request.POST.get('password', None)
@@ -42,11 +42,11 @@ def create_user(request):
 
     current_site = get_current_site(request)
     subject = 'Activate Your Account'
-    token = token_generator.make_token(user)
-    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    refresh = TokenObtainPairSerializer.get_token(user)
+
     domain = current_site.domain
 
-    url = f'http://{domain}/users/activate/{uid}/{token}'
+    url = f'http://{domain}/users/activate/{refresh.access_token}'
     email_body = 'Hi ' + user.username + 'Use link below to verify your email: ' + url
     
     
@@ -59,7 +59,7 @@ def create_user(request):
         subject = 'Activate User Account',
         content = 'Activate User Account',
     )
-
+    
     return UserSerializer(
             instance=user,
             many=False
@@ -67,28 +67,37 @@ def create_user(request):
 
 
 @api_view(['GET'])
-def activate(request, uid, token):
-    uid = force_str(urlsafe_base64_decode(uid))
-    user = User.objects.get(pk=uid)
-
-    if token_generator.check_token(user,token):
-        user.active = True
-        user.save()
-
-        logs = EmailLogs.objects.filter(author__pk = uid)[0]
-        logs.is_success = True
-        logs.save()         
-
-        UserActivation.objects.create(
-            author = user,
-            active = True,
-            token = token
+@json_response
+def activate(request, token):
+    
+    payload = jwt.decode(
+        jwt=token, 
+        key=SECRET_KEY, 
+        algorithms=['HS256'],
         )
-    return redirect('/users/login')
+    user_id = payload['user_id']
+    user = User.objects.get(pk = user_id)
+    
+    user.active = True
+    user.save()
+
+    logs = EmailLogs.objects.filter(author__pk = user_id)[0]
+    logs.is_success = True
+    logs.save()         
+
+    activate_user = UserActivation.objects.create(
+        author = user,
+        active = True,
+        token = token
+    )
+    return UserActivationSerialier(
+            instance=activate_user,
+            many=False
+        ).data
 
 @api_view(['POST'])
 @json_response
-def login(request):
+def log_in(request):
     username = request.POST.get('username', None)
     email = request.POST.get('email', None)
     password = request.POST.get('password', None)
@@ -106,10 +115,11 @@ def login(request):
             message= 'Please validate your account'
         )
 
-    token = token_generator.make_token(user=user)
+    refresh = TokenObtainPairSerializer.get_token(user)
+
     device_token = UserDeviceToken.objects.create(
         author=user,
-        token=token,
+        token=refresh.access_token,
         active=True
     )
 
@@ -119,19 +129,57 @@ def login(request):
         ).data
 
 
-@api_view()
-def log_out(request):
+@api_view(['PUT'])
+@json_response
+def edit_profile(request):
+    user = request.user
+    user.phone_number = request.POST.get('phone_number', None)
+    user.full_name = request.POST.get('full_name', None)
+    user.nick_name = request.POST.get('nick_name', None)
+    user.quote = request.POST.get('quote', None)
+    user.gender = request.POST.get('gender', None)
+    user.avatar = request.POST.get('avatar', None)
+    user.save()
+
+    return UserSerializer(
+        instance= user,
+        many = False
+    ).data
+
+@api_view(['PUT'])
+@json_response
+def change_password(request):
+    user = request.user
+    password = request.POST.get('password', None)
+    new_password = request.POST.get('new_password', None)
+    validate_password = request.POST.get('validate_password', None)
+
+    if not password or not new_password or not validate_password:
+        raise ValueError('Please fill all fields!!!')
+
+    if password != user.password:
+        raise ValueError('Wrong password')
+    
+    if new_password != validate_password:
+        raise ValueError('Validate password must be same as new password')
+    
+    user.set_password(new_password)
+    user.save()
+
+    return UserSerializer(
+        instance= user,
+        many = False
+    ).data
+    
+
+
+@api_view(['PUT'])
+@json_response
+def reset_password(request):
     ...
 
-@api_view(['POST'])
-def create_follower(request): ...
-    # if request.method == 'GET':
-    #     followers = Follower.objects.all()
-    #     serializer = FollowerSerializer(followers, many=True)
-    #     return Response(serializer.data)
-    # elif request.method == 'POST':
-    # serializer = FollowerSerializer(data=request.data)
-    # if serializer.is_valid():
-    #     serializer.save()
-    #     return Response(data=serializer.data, status=status.HTTP_201_CREATED)
-    # return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+

@@ -8,14 +8,14 @@ from utils.enums import Status
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
 class UserManager(BaseUserManager):
-    def create_user(self, username, password=None):
+    def create_user(self, email, password=None):
         """
         Creates and saves a User with the given email and password.
         """
-        if not username:
+        if not email:
             raise ValueError('Users must have an email address')
         user = self.model(
-            username=username,
+            email=email,
         )
         user.set_password(password)
         user.is_superuser = False
@@ -23,24 +23,24 @@ class UserManager(BaseUserManager):
         user.active = False
         user.save(using=self._db)
         return user
-    def create_staffuser(self, username, password):
+    def create_staffuser(self, email, password):
         """
         Creates and saves a staff user with the given email and password.
         """
         user = self.create_user(
             password=password,
-            username=username,
+            email=email,
         )
         user.is_admin = True
         user.save(using=self._db)
         return user
-    def create_superuser(self, username, password):
+    def create_superuser(self, email, password):
         """
         Creates and saves a superuser with the given email and password.
         """
         user = self.create_user(
             password=password,
-            username=username,
+            email=email,
         )
         user.is_superuser = True
         user.is_admin = True

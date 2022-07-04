@@ -34,4 +34,5 @@ def json_response(func):
                 }, 
                 status=status.HTTP_200_OK,
             )
+            
     return wrapper
