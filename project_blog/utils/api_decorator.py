@@ -12,7 +12,7 @@ def json_response(func):
                 data={
                     'data': None, 
                     'error': 404, 
-                    'message': e.message,
+                    'message': str(e),
                 }, 
                 status=status.HTTP_200_OK,
             )
@@ -21,7 +21,7 @@ def json_response(func):
                 data={
                     'data': None, 
                     'error': 500, 
-                    'message': e.message,
+                    'message': str(e),
                 }, 
                 status=status.HTTP_200_OK,
             )

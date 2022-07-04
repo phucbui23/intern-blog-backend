@@ -45,19 +45,11 @@ def create_tag(request):
 @api_view(['GET'])
 @json_response
 def get_tag(request):
-    try:
-        # get tag by id
-        tag = Tag.objects.get(pk=request.GET.get('id'))
-        
-        # get tag by name
-        # tag = Tag.objects.get(name=request.GET.get('name'))
-    except Tag.DoesNotExist:
-        raise ValidationError(
-            code=500,
-            message="Tag doesn't exist"
-        )
-
-    data = TagSerializer(tag).data
+    data = request.GET.dict().copy()
+    name = data.pop('name', None)
+    model = Tag.get_tag_by_name(name)
+    
+    data = TagSerializer(model).data
     return data
 
 

@@ -60,7 +60,7 @@ def create_user(request):
         content = 'Activate User Account',
     )
 
-    return UserSerialier(
+    return UserSerializer(
             instance=user,
             many=False
         ).data
