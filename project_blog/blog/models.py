@@ -34,6 +34,7 @@ class Blog(models.Model):
         blank=True,
     )
     is_published = models.BooleanField(
+        default=False,
         null=False,
         blank=False,
     )
