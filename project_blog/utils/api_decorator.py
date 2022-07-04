@@ -6,21 +6,21 @@ def json_response(func):
         try:
             data = func(*args, **kwargs)
 
-        except ValidationError as e:
-            return Response(
-                data={
-                    'data': None, 
-                    'error': 404, 
-                    'message': e.message,
-                }, 
-                status=status.HTTP_200_OK,
-            )
+        # except ValidationError as e:
+        #     return Response(
+        #         data={
+        #             'data': None, 
+        #             'error': 404, 
+        #             'message': e.message,
+        #         }, 
+        #         status=status.HTTP_200_OK,
+        #     )
         except Exception as e:
             return Response(
                 data={
                     'data': None, 
                     'error': 500, 
-                    'message': e.message,
+                    'message': str(e),
                 }, 
                 status=status.HTTP_200_OK,
             )
@@ -33,4 +33,5 @@ def json_response(func):
                 }, 
                 status=status.HTTP_200_OK,
             )
+            
     return wrapper
