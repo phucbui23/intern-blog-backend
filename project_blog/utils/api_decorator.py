@@ -1,3 +1,4 @@
+from django.forms import ValidationError
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -6,15 +7,15 @@ def json_response(func):
         try:
             data = func(*args, **kwargs)
 
-        # except ValidationError as e:
-        #     return Response(
-        #         data={
-        #             'data': None, 
-        #             'error': 404, 
-        #             'message': e.message,
-        #         }, 
-        #         status=status.HTTP_200_OK,
-        #     )
+        except ValidationError as e:
+            return Response(
+                data={
+                    'data': None, 
+                    'error': 404, 
+                    'message': str(e),
+                }, 
+                status=status.HTTP_200_OK,
+            )
         except Exception as e:
             return Response(
                 data={
