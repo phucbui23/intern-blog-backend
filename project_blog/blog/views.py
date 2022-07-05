@@ -33,23 +33,26 @@ def create_blog(request):
     
     if tag is not None:
         for x in tag:
-            # get tag
+            # get tag by name in the list of tags
             tag_name = x.pop("name")
             _tag = Tag.get_tag_by_name(tag_name)
             
-            # if tag doesn't exist, have to create
+            # if tag not exist, create tag
             if _tag is None:
                 _tag = Tag.objects.create(
                     author=user,
                     name=tag_name,
                     description="",
                 )
+                
+            blogtag = BlogTag.get_blog_tag(new_blog, _tag)
             
-            # create blogtag
-            blogtag = BlogTag.objects.create(
-                blog=new_blog,
-                tag=_tag,
-            )
+            # create blogtag for every tag if not exist
+            if blogtag is None:
+                blogtag = BlogTag.objects.create(
+                    blog=new_blog,
+                    tag=_tag,
+                )
     
     data = BlogSerializer(
         instance=new_blog, 
@@ -66,7 +69,6 @@ def get_blog(request):
         blog = Blog.objects.get(pk=request.GET.get('uid'))
     except Blog.DoesNotExist:
         raise ValidationError(
-            code=500,
             message="Blog doesn't exist"
         )
 
@@ -74,10 +76,10 @@ def get_blog(request):
     return data
 
 
-@api_view(['PUT'])
+@api_view(['POST'])
 @json_response
 def edit_blog(request):
-    data = request.PUT.dict().copy()
+    data = request.data.copy()
     
     try:
         blog = Blog.objects.get(
@@ -88,15 +90,35 @@ def edit_blog(request):
             message="Blog doesn't exist",
         )
 
-    new_blog = Blog.objects.update(
-        **data,
-    )
+    blog.name = data.pop('name', None)
+    blog.content = data.pop('content', None)
+    blog.is_published = data.pop('is_published', None)
+    tag = data.pop('tag', None)
     
-    data = BlogSerializer(
-        data=new_blog, 
-        many=False,
-    ).data
+    if tag is not None:
+        for x in tag:
+            # get tag by name in the list of tags
+            tag_name = x.pop("name")
+            _tag = Tag.get_tag_by_name(tag_name)
+            
+            # if tag not exist, create tag
+            if _tag is None:
+                _tag = Tag.objects.create(
+                    author=blog.author,
+                    name=tag_name,
+                    description="",
+                )
+                
+            blogtag = BlogTag.get_blog_tag(blog, _tag)            
+            # create blogtag for every tag if not exist
+            if blogtag is None:
+                blogtag = BlogTag.objects.create(
+                    blog=blog,
+                    tag=_tag,
+                )
     
+    blog.save()
+    data = BlogSerializer(blog).data
     return data
 
 # @api_view(['POST'])
