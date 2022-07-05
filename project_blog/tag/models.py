@@ -1,5 +1,4 @@
 from django.db import models
-from django.forms import ValidationError
 
 from user_account.models import User
 from blog.models import Blog
@@ -43,10 +42,8 @@ class Tag(models.Model):
             # get tag by name
             tag = Tag.objects.get(name=_name)
         except Tag.DoesNotExist:
-            raise ValidationError(
-                code=500,
-                message="Tag doesn't exist"
-            )
+            # if tag not exist return None
+            tag = None
         return tag
     
     def __str__(self) -> str:
@@ -85,6 +82,33 @@ class BlogTag(models.Model):
         null=True,
         blank=True,
     )
+    
+    @staticmethod
+    def get_blog_tag(_blog, _tag):
+        try:        
+            blogtag = BlogTag.objects.get(
+                blog=_blog,
+                tag=_tag,
+            )
+        except BlogTag.DoesNotExist:
+            blogtag = None
+        return blogtag
+    
+    @staticmethod
+    def get_all_blog_by_tag(_tag):
+        try:        
+            blogtag = BlogTag.objects.filter(tag=_tag)
+        except BlogTag.DoesNotExist:
+            blogtag = None
+        return blogtag
+    
+    @staticmethod
+    def get_all_tag_by_blog(_blog):
+        try:
+            blogtag = BlogTag.objects.filter(blog=_blog)
+        except BlogTag.DoesNotExist:
+            blogtag = None
+        return blogtag
     
     class Meta: 
         unique_together = (

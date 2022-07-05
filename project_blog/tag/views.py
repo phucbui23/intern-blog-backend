@@ -5,6 +5,7 @@ from user_account.models import User
 from blog.models import Blog
 from .models import Tag, BlogTag
 from .serializers import BlogTagSerializer, TagSerializer
+from blog.serializers import BlogSerializer
 from utils.api_decorator import json_response
 
 
@@ -46,6 +47,41 @@ def get_tag(request):
     model = Tag.get_tag_by_name(name)
     
     data = TagSerializer(model).data
+    return data
+
+
+@api_view(['GET'])
+@json_response
+def get_tag_by_blog(request):
+    data = request.GET.dict().copy()
+    blog = data.pop('blog', None)
+    tags = BlogTag.get_all_tag_by_blog(blog)
+    
+    # use list for tags of blog
+    data = []
+    for x in tags:
+        tag = Tag.get_tag_by_name(x.tag)
+        data.append(TagSerializer(tag).data)
+        
+    return data
+
+
+@api_view(['POST'])
+@json_response
+def edit_tag(request):
+    data = request.data.copy()
+    try:
+        tag = Tag.objects.get(name=request.GET.get('tag'))
+    except Tag.DoesNotExist:
+        raise ValidationError(
+            message="Tag doesn't exist",
+        )
+        
+    tag.name = data.pop('name', None)
+    tag.description = data.pop('description', None)
+    tag.save()
+    
+    data = TagSerializer(tag).data
     return data
 
 
