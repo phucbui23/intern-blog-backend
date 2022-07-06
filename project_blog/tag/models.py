@@ -3,6 +3,7 @@ from django.db import models
 from user_account.models import User
 from blog.models import Blog
 
+
 class Tag(models.Model):
     name = models.TextField(
         max_length=255,
@@ -39,11 +40,9 @@ class Tag(models.Model):
     @staticmethod
     def get_tag_by_name(_name):
         try:        
-            # get tag by name
-            tag = Tag.objects.get(name=_name)
+            tag = Tag.objects.get(name=_name) # get tag by name
         except Tag.DoesNotExist:
-            # if tag not exist return None
-            tag = None
+            tag = None # if tag not exist return None
         return tag
     
     def __str__(self) -> str:
@@ -55,7 +54,7 @@ class BlogTag(models.Model):
         on_delete=models.CASCADE,
         to_field='uid',
         related_name='blogtag_fk_blog',
-        db_column='blog_id',
+        db_column='blog_uid',
         db_constraint=False,
         null=False,
         blank=False,
@@ -83,6 +82,11 @@ class BlogTag(models.Model):
         blank=True,
     )
     
+    class Meta: 
+        unique_together = (
+            ('blog', 'tag',),
+        )
+    
     @staticmethod
     def get_blog_tag(_blog, _tag):
         try:        
@@ -103,14 +107,9 @@ class BlogTag(models.Model):
         return blogtag
     
     @staticmethod
-    def get_all_tag_by_blog(_blog):
+    def get_tags_in_blog(_blog):
         try:
             blogtag = BlogTag.objects.filter(blog=_blog)
         except BlogTag.DoesNotExist:
             blogtag = None
         return blogtag
-    
-    class Meta: 
-        unique_together = (
-            ('blog', 'tag',),
-        )
