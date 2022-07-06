@@ -1,12 +1,16 @@
+import json
+from unicodedata import name
 from django.forms import ValidationError
+from rest_framework import filters
 from rest_framework.decorators import api_view
+from tag.models import BlogTag, Tag
+from tag.serializers import TagSerializer
+from user_account.models import User
 from utils.api_decorator import json_response
 
 from .models import Blog, BlogHistory, BlogLike
-from .serializers import BlogHistorySerializer, BlogLikeSerializer, BlogSerializer
-from user_account.models import User
-from tag.models import Tag, BlogTag
-from tag.serializers import TagSerializer
+from .serializers import (BlogHistorySerializer, BlogLikeSerializer,
+                          BlogSerializer)
 
 
 @api_view(['POST'])
@@ -61,10 +65,29 @@ def create_blog(request):
     
     return data
 
+@api_view()
+@json_response
+def get_blog(request):
+    data = request.data.copy()
+    required_blog_title = data.pop('name', None)
+    required_blog_content = data.pop('content', None)
+
+    if required_blog_title:
+        required_blog = Blog.objects.filter(
+            name__contain=required_blog_title,
+        )[:5]
+
+    elif required_blog_content:
+        required_blog = Blog.objects.filter(
+            content__contain=required_blog_content,
+        )[:5]
+
+    return required_blog
+
 
 @api_view(['GET'])
 @json_response
-def get_blog(request):
+def get_blog_detail(request):
     try:
         blog = Blog.objects.get(pk=request.GET.get('uid'))
     except Blog.DoesNotExist:
@@ -120,6 +143,7 @@ def edit_blog(request):
     blog.save()
     data = BlogSerializer(blog).data
     return data
+
 
 # @api_view(['POST'])
 # def create_blog_history(request):
