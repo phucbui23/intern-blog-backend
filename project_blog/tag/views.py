@@ -6,7 +6,7 @@ from user_account.models import User
 from blog.models import Blog
 
 from .models import Tag, BlogTag
-from .serializers import TagSerializer
+from .serializers import BlogTagSerializer, TagSerializer
 
 
 @api_view(['POST'])
@@ -35,30 +35,4 @@ def create_tag(request):
         many=False,
     ).data
     
-    return data
-
-
-@api_view(['GET'])
-@json_response
-def get_tag_in_blog(request):
-    data = request.GET.dict().copy()
-    bloguid = data.pop('blog', None)
-    blogtags = BlogTag.get_tags_in_blog(bloguid)
-    
-    # check if blog exist
-    try:
-        blog = Blog.objects.get(
-            uid=bloguid,
-        )
-    except Blog.DoesNotExist:
-        raise ValidationError(
-            message="Blog doesn't exist"
-        )
-    
-    data = [] # use list for tags of blog
-    for blogtag in blogtags:
-        tag = Tag.get_tag_by_name(blogtag.tag)
-        tagdata = TagSerializer(tag).data
-        data.append(tagdata)
-        
     return data
