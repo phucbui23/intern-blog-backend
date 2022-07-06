@@ -1,5 +1,7 @@
 import json
 from unicodedata import name
+
+from django.core.paginator import Paginator
 from django.forms import ValidationError
 from rest_framework import filters
 from rest_framework.decorators import api_view
@@ -11,7 +13,6 @@ from utils.api_decorator import json_response
 from .models import Blog, BlogHistory, BlogLike
 from .serializers import (BlogHistorySerializer, BlogLikeSerializer,
                           BlogSerializer)
-
 
 @api_view(['POST'])
 @json_response
@@ -65,24 +66,50 @@ def create_blog(request):
     
     return data
 
-@api_view()
+@api_view(['GET'])
 @json_response
-def get_blog(request):
-    data = request.data.copy()
-    required_blog_title = data.pop('name', None)
-    required_blog_content = data.pop('content', None)
+def get_blogs(request):
+    data = request.data.dict().copy()
+    query_blogs_uid = data.pop('uid', None)
+    query_blogs_title = data.pop('name', None)
+    query_blogs_content = data.pop('content', None)
 
-    if required_blog_title:
-        required_blog = Blog.objects.filter(
-            name__contain=required_blog_title,
-        )[:5]
+    if query_blogs_uid:
+        return BlogSerializer( 
+            Blog.objects.get(uid=query_blogs_uid),
+            many=False
+        ).data
 
-    elif required_blog_content:
-        required_blog = Blog.objects.filter(
-            content__contain=required_blog_content,
-        )[:5]
+    if query_blogs_title and query_blogs_content:
+        query_blogs = Blog.objects.filter(
+            name__icontains=query_blogs_title,
+            content__icontains=query_blogs_content,
+        )
 
-    return required_blog
+    elif query_blogs_title:
+        query_blogs = Blog.objects.filter(
+            name__icontains=query_blogs_title,
+        )
+
+    elif query_blogs_content:
+        query_blogs = Blog.objects.filter(
+            content__icontains=query_blogs_content,
+        )
+
+    # paginator = Paginator(
+    #     object_list=query_blogs, 
+    #     per_page=3,
+    # )
+
+    # return BlogSerializer(
+    #     instance={'data' : paginator}, 
+    #     many=True,
+    # ).data
+
+    return BlogSerializer(
+        query_blogs,
+        many=True,
+    ).data
 
 
 @api_view(['GET'])
