@@ -25,10 +25,7 @@ class BlogLikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogLike
         fields = [
-            'author',
-            'blog',
-            'comment',
-            'created_at',
-            'updated_at',
+            'author', 'blog', 'comment',
+            'created_at', 'updated_at',
         ]
-
+        read_only_field = fields
