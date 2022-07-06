@@ -55,6 +55,9 @@ class Blog(models.Model):
         blank=True,
     )
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class BlogHistory(models.Model):
     blog = models.ForeignKey(
