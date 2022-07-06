@@ -2,6 +2,7 @@ import uuid
 
 from django.db import models
 from user_account.models import User
+from attachment.models import Attachment
 
 
 class Blog(models.Model):
@@ -65,7 +66,7 @@ class BlogHistory(models.Model):
         on_delete=models.CASCADE,
         to_field='uid',
         related_name='bloghistory_fk_blog',
-        db_column='blog_id',
+        db_column='blog_uid',
         db_constraint=False,
         null=False,
         blank=False,
@@ -138,7 +139,7 @@ class BlogLike(models.Model):
         on_delete=models.CASCADE,
         to_field='uid',
         related_name='bloglike_fk_blog',
-        db_column='blog_id',
+        db_column='blog_uid',
         db_constraint=False,
         null=False,
         blank=False,
