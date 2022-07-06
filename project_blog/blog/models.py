@@ -30,16 +30,6 @@ class Blog(models.Model):
         null=False,
         blank=False,
     )
-    # attachment = models.ForeignKey(
-    #     to=Attachment,
-    #     on_delete=models.CASCADE,
-    #     to_field='uid',
-    #     related_name='blog_fk_attachment',
-    #     db_column='attachment_uid',
-    #     db_constraint=False,
-    #     null=True,
-    #     blank=True,
-    # )
     content = models.TextField(
         null=True,
         blank=True,
