@@ -14,6 +14,8 @@ class Attachment(models.Model):
         editable=False, 
         unique=True, 
         max_length=36,
+        null=False,
+        blank=False
     )
 
     user = models.ForeignKey(
@@ -31,27 +33,42 @@ class Attachment(models.Model):
         max_length=32, 
         choices=Attachment_type.choices, 
         default=Attachment_type.AVATAR,
+        null=False,
+        blank=False,
     )
 
     file_name = models.CharField(
         max_length=225,
+        null=False,
+        blank=False,
     )
 
     display_name = models.CharField(
         max_length=225,
+        null=False,
+        blank=False,
     )
 
-    file_path = models.TextField()
+    file_path = models.TextField(
+        null=False,
+        blank=False,
+    )
 
     deleted_at = models.DateTimeField(
         null=True, 
         blank=True,
     )
 
-    is_delete = models.BooleanField()
+    is_deleted = models.BooleanField(
+        default=False,
+        null=False,
+        blank=False,
+    )
 
     created_at = models.DateTimeField(
-        auto_now_add=True
+        auto_now_add=True,
+        null=False,
+        blank=False,
     )
 
     updated_at = models.DateTimeField(
