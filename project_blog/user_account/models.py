@@ -1,6 +1,7 @@
 from django.db import models
 from utils.enums import Gender
 from utils.enums import Status
+from rest_framework.exceptions import NotFound
 #from blog.models import Blog
 #from attachment.models import Attachment
 # Create your models here.
@@ -47,6 +48,8 @@ class UserManager(BaseUserManager):
         user.active = True
         user.save(using=self._db)
         return user
+
+
 class User(AbstractBaseUser):
     objects = UserManager()
     REQUIRED_FIELD = ('email',)
@@ -124,6 +127,13 @@ class User(AbstractBaseUser):
     def __str__(self) -> str:
         return self.username
 
+    @staticmethod
+    def get_user(email):
+        try:        
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise NotFound("User doesn\'t exits",)
+        return user
 
 class Follower(models.Model):
     author = models.ForeignKey(
