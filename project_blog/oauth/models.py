@@ -5,7 +5,6 @@ from user_account.models import User
 class UserDeviceToken(models.Model):
     author = models.ForeignKey(
         to=User, 
-        unique=True, 
         on_delete=models.CASCADE,
         to_field='id',
         related_name='user_device_token_fk_author',
@@ -17,7 +16,6 @@ class UserDeviceToken(models.Model):
 
     token = models.CharField(
         max_length=255, 
-        unique=True,
     )
 
     device_id = models.CharField(
@@ -61,11 +59,21 @@ class UserDeviceToken(models.Model):
         unique_together = (
             ('author', 'token',),
         )
+    
+    @staticmethod
+    def get_user_device(user):
+        try:
+            data = UserDeviceToken.objects.filter(author=user)
+        except:
+            raise
+        return data
+
+    def __str__(self) -> str:
+        return self.author.email
 
 class UserActivation(models.Model):
     author = models.ForeignKey(
         to= User, 
-        unique=True, 
         on_delete=models.CASCADE,
         to_field='id',
         related_name='user_activation_fk_author',
@@ -81,7 +89,6 @@ class UserActivation(models.Model):
 
     token = models.CharField(
         max_length=255, 
-        unique=True,
     )
 
     created_at = models.DateTimeField(
@@ -99,10 +106,12 @@ class UserActivation(models.Model):
             ('author', 'token',),
         )
 
+    def __str__(self) -> str:
+        return self.author.email
+
 class ResetPassword(models.Model):
     author = models.ForeignKey(
         to= User, 
-        unique=True, 
         on_delete=models.CASCADE,
         to_field='id',
         related_name='reset_password_fk_author',
@@ -118,7 +127,6 @@ class ResetPassword(models.Model):
 
     token = models.CharField(
         max_length=255, 
-        unique=True,
     )
     
     created_at = models.DateTimeField(
@@ -135,3 +143,6 @@ class ResetPassword(models.Model):
         unique_together= (
             ('author', 'token',),
         )
+
+    def __str__(self) -> str:
+        return self.author.email

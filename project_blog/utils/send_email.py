@@ -1,36 +1,52 @@
 from django.core.mail import EmailMessage
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.forms import ValidationError
+from rest_framework_simplejwt.tokens import AccessToken
+from django.conf import settings
 from email_logs.models import EmailLogs
-from utils.enums import Type
+from oauth.models import UserActivation, ResetPassword
+from .enums import Type
 
 def send_email(user, type_email):
-    domain = '127.0.0.1:8000'
-    subject = 'Activate Your Account'
-    refresh = TokenObtainPairSerializer.get_token(user)
-    if type_email == Type.ACTIVATE:
-        url = f'http://{domain}/users/activate/{refresh.access_token}'
-        body = 'Hi ' + user.full_name + 'Use link below to verify your email: ' + url
+    token = AccessToken.for_user(user)
+    try:
+        if (type_email == Type.ACTIVATE):
+            url = f'{settings.DOMAIN}/oauths/activate/{token}'
+            subject = 'Activate Account'
+            body = f'Hi {user.full_name} Use link below to verify your email: {url}'
+
+            UserActivation.objects.create(
+                author=user,
+                token=token,
+                active=True,
+            )
+            
+        elif (type_email == Type.RESET_PASSWORD):   
+            url = f'{settings.DOMAIN}/oauths/reset/{token}'
+            subject = 'Reset Password'
+            body = f'Hi {user.full_name} Please click this link to reset your password: {url}'
+
+            ResetPassword.objects.create(
+                author=user,
+                token=token,
+                active=True,
+            )
+        
+        else:
+            raise ValidationError('Type is not valid')
         
         EmailLogs.objects.create(
-            author = user,
-            type = type_email,
-            subject = 'Activate User Account',
-            content = 'Activate User Account',
+            author=user,
+            type=type_email,
+            is_success=True,
+            subject=subject,
+            content=body,
         )
 
-        email = EmailMessage(subject = subject, body= body, to=[user.email])
-        email.send()
-    
-    elif type_email == Type.RESET_PASSWORD:   
-        url = f'http://{domain}/users/reset/{refresh.access_token}'
-        body = 'Hi ' + user.full_name + 'Please click this link to reset your password: ' + url
-        
-        EmailLogs.objects.create(
-            author = user,
-            type = type_email,
-            subject = 'Reset Password',
-            content = 'Reset Password',
+        email = EmailMessage(
+            subject=subject, 
+            body=body, 
+            to=[user.email],
         )
-
-        email = EmailMessage(subject = subject, body= body, to=[user.email])
         email.send()
+    except: 
+        raise ValueError('Send Email Failed')
