@@ -47,5 +47,3 @@ class ResetPasswordSerialier(serializers.ModelSerializer):
         )
         data['author'] = UserSerializer(author, many=False).data
         return data
-
-

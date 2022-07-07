@@ -1,4 +1,3 @@
-import email
 from rest_framework import serializers
 from attachment.models import Attachment
 from attachment.serializers import AttachmentSerializer
@@ -13,13 +12,13 @@ class UserSerializer(serializers.ModelSerializer):
                   'full_name', 'nick_name', 'quote',)
         read_only_fields = fields
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        avatar = Attachment.objects.get(
-            user=instance,
-        )
-        data['avatar'] = AttachmentSerializer(instance=avatar, many=False).data
-        return data
+    # def to_representation(self, instance):
+    #     data = super().to_representation(instance)
+    #     avatar = Attachment.objects.get(
+    #         user=instance,
+    #     )
+    #     data['avatar'] = AttachmentSerializer(instance=avatar, many=False).data
+    #     return data
 
 
 class FollowerSerializer(serializers.ModelSerializer):

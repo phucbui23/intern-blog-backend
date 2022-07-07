@@ -7,6 +7,12 @@ from rest_framework.exceptions import ValidationError,NotFound
 from utils.api_decorator import json_response
 from utils.send_email import send_email
 from utils.enums import Type
+from utils.validate_token import validate_token
+from utils.messages import (
+    MAX_LENGTH_PHONE_NUMBER, MAX_LENGTH_EMAIL, MAX_LENGTH_FULLNAME, MAX_LENGTH_NICK_NAME,
+    MAX_LENGTH_PASSWORD, EXIST_USER, EMPTY_FIELDS,
+    EMPTY_EMAIL_FIELDS, EMPTY_FULLNAME_FIELDS, 
+    WRONG_PASSWORD, NOT_SAME_PASSWORD)
 
 from .models import User
 from .serializers import UserSerializer
@@ -21,19 +27,29 @@ def sign_up(request):
     nickname = request.POST.get('nick_name', fullname)
 
     if (not email):
-        raise ValidationError('Users must have email address')
+        raise ValidationError(EMPTY_EMAIL_FIELDS)
     if (not fullname):
-        raise ValidationError('Users must have full name')
+        raise ValidationError(EMPTY_FULLNAME_FIELDS)
+
+    if (len(email) > 255):
+        raise ValidationError(MAX_LENGTH_EMAIL)
+    
+    if (len(fullname) > 255):
+        raise ValidationError(MAX_LENGTH_FULLNAME)
+    
+    if (len(nickname) > 255):
+        raise ValidationError(MAX_LENGTH_NICK_NAME)
 
     validate_email(email)
 
     try:
-        is_has_user = User.get_user(email=email).exists()
+        User.get_user(email=email)
+        is_has_user = True
     except NotFound:
         is_has_user = False
 
     if (is_has_user):
-        raise ValidationError('Email is existed')
+        raise ValidationError(EXIST_USER)
 
     username = email.split('@')[0]
     user = User.objects.create( 
@@ -53,25 +69,42 @@ def sign_up(request):
 
     return UserSerializer(
         instance=user,
-        many=False
+        many=False,
     ).data
 
 
 @api_view(['PUT'])
 @json_response
 def edit_profile(request):
+    validate_token(request.auth)
+    
     user = request.user
-    user.phone_number = request.POST.get('phone_number', user.phone_number)
-    user.full_name = request.POST.get('full_name', user.full_name)
-    user.nick_name = request.POST.get('nick_name', user.nick_name)
+
+    phone_number = request.POST.get('phone_number', user.phone_number)
+    full_name = request.POST.get('full_name', user.full_name)
+    nick_name = request.POST.get('nick_name', user.nick_name)
+    
+    if (len(phone_number) > 16):
+        raise ValidationError(MAX_LENGTH_PHONE_NUMBER)
+    
+    if (len(full_name) > 255):
+        raise ValidationError(MAX_LENGTH_FULLNAME)
+    
+    if (len(nick_name) > 255):
+        raise ValidationError(MAX_LENGTH_NICK_NAME)
+    
+    
+    user.phone_number = phone_number
+    user.full_name = full_name
+    user.nick_name = nick_name
     user.quote = request.POST.get('quote', user.quote)
     user.gender = request.POST.get('gender', user.gender)
     user.updated_at = datetime.now()
     user.save()
 
     return UserSerializer(
-        instance= user,
-        many = False
+        instance=user,
+        many=False
     ).data
 
 
@@ -86,19 +119,22 @@ def change_password(request):
     password_validation.validate_password(new_password)
 
     if not current_password or not new_password or not validate_password:
-        raise ValidationError('Please fill all fields!!!')
- 
-    if not user.check_password(current_password):
-        raise ValidationError('Wrong password')
+        raise ValidationError(EMPTY_FIELDS)
     
+    if not user.check_password(current_password):
+        raise ValidationError(WRONG_PASSWORD)
+    
+    if (len(new_password) > 255):
+        raise ValidationError(MAX_LENGTH_PASSWORD)
+
     if new_password != validate_password:
-        raise ValidationError('Validate password must be same as new password')
+        raise ValidationError(NOT_SAME_PASSWORD)
     
     user.set_password(new_password)
     user.save()
 
     return UserSerializer(
-        instance= user,
-        many = False
+        instance=user,
+        many=False
     ).data
     
