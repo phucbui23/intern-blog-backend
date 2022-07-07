@@ -1,27 +1,27 @@
 from django.core.mail import EmailMessage
 from django.forms import ValidationError
-from rest_framework_simplejwt.tokens import AccessToken
 from django.conf import settings
 from email_logs.models import EmailLogs
 from oauth.models import UserActivation, ResetPassword
+from utils.gen_token import gen_token
 from .enums import Type
 
 def send_email(user, type_email):
-    token = AccessToken.for_user(user)
+
+    token = gen_token()
     try:
         if (type_email == Type.ACTIVATE):
-            url = f'{settings.DOMAIN}/oauths/activate/{token}'
+            url = f'{settings.DOMAIN}/oauths/activate?token={token}'
             subject = 'Activate Account'
             body = f'Hi {user.full_name} Use link below to verify your email: {url}'
-
+            
             UserActivation.objects.create(
                 author=user,
                 token=token,
                 active=True,
             )
-            
         elif (type_email == Type.RESET_PASSWORD):   
-            url = f'{settings.DOMAIN}/oauths/reset/{token}'
+            url = f'{settings.DOMAIN}/oauths/reset?token={token}'
             subject = 'Reset Password'
             body = f'Hi {user.full_name} Please click this link to reset your password: {url}'
 
@@ -34,6 +34,7 @@ def send_email(user, type_email):
         else:
             raise ValidationError('Type is not valid')
         
+
         EmailLogs.objects.create(
             author=user,
             type=type_email,

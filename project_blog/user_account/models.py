@@ -1,12 +1,11 @@
 from django.db import models
+from rest_framework.exceptions import NotFound
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+
 from utils.enums import Gender
 from utils.enums import Status
-from rest_framework.exceptions import NotFound
-#from blog.models import Blog
-#from attachment.models import Attachment
-# Create your models here.
+from utils.messages import NOT_FOUND_USER
 
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None):
@@ -132,7 +131,7 @@ class User(AbstractBaseUser):
         try:        
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise NotFound("User doesn\'t exits",)
+            raise NotFound(NOT_FOUND_USER)
         return user
 
 class Follower(models.Model):

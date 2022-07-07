@@ -1,4 +1,3 @@
-import email
 from rest_framework import serializers
 from attachment.models import Attachment
 from attachment.serializers import AttachmentSerializer
