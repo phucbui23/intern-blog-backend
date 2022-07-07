@@ -1,55 +1,55 @@
 from rest_framework.decorators import api_view
-
-from django.contrib.auth import password_validation
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from user_account.models import User
-from utils.api_decorator import json_response
-
-from utils.send_email import send_email
-from .models import UserActivation, UserDeviceToken, ResetPassword
-from email_logs.models import EmailLogs
-from .serializers import UserDeviceTokenSerialier, ResetPasswordSerialier
-
-from utils.enums import Type
-from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.exceptions import ValidationError
-
 from django.core.validators import validate_email
 from datetime import datetime, timedelta
+from django.contrib.auth import password_validation
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from utils.api_decorator import json_response
+from utils.send_email import send_email
+from utils.enums import Type
+from utils.validate_token import validate_token
+from utils.messages import (
+    EMPTY_PASSWORD_FIELDS,
+    INVALID_TOKEN, NOT_ACTIVE, 
+    EXPIRED_TOKEN, EMPTY_EMAIL_FIELDS, 
+    ACCOUNT_ACTIVE, ACCOUNT_NOT_ACTIVE, WRONG_PASSWORD)
+from user_account.models import User
+
+from .models import UserActivation, UserDeviceToken, ResetPassword
+from .serializers import UserDeviceTokenSerialier
 
 # Create your views here.
 
 @api_view(['PUT'])
 @json_response
-def activate(request, token):
+def activate(request):
     password = request.POST.get('password', None)
 
     if (not password):
-        raise ValueError('Password must not be empty')
+        raise ValidationError(EMPTY_PASSWORD_FIELDS)
 
     password_validation.validate_password(password=password)
-
     try:
-        token = UserActivation.objects.get(token=token)
+        token = UserActivation.objects.get(token=request.query_params['token'])
     except:
-        raise Exception('Token is invalid')
+        raise ValidationError(INVALID_TOKEN)
     
     if (not token.active):
-        raise Exception('Not active')
+        raise Exception(NOT_ACTIVE)
 
     user = token.author
     UserActivation.objects.filter(author=user).update(active=False)
-    expr = token.created_at + timedelta(minutes=5)   ##check
-    if expr < datetime.now():
-        raise Exception('Token is expired')
+    expr = token.created_at + timedelta(minutes=5)   
 
-    UserActivation.objects.update(
-        author=user,
-        token=token,
-        active=True,
-        updated_at=datetime.now(),
-    )
+    if (expr < datetime.now()):
+        raise ValidationError(EXPIRED_TOKEN)
 
+    token.active = True
+    token.updated_at = datetime.now()
+    token.save()
+
+    user.set_password(password)
     user.active = True
     user.save()
 
@@ -60,13 +60,17 @@ def activate(request, token):
 @json_response
 def resend_email(request):
     email = request.POST.get('email', None)
-    user = User.objects.get(email=email)
 
     if (not email):
-        raise ValidationError('Users must have email address')
+        raise ValidationError(EMPTY_EMAIL_FIELDS)
     
     validate_email(email)
 
+    user = User.get_user(email=email)
+
+    if (user.active):
+        raise Exception(ACCOUNT_ACTIVE)
+    
     send_email(
         user=user, 
         type_email=Type.ACTIVATE,
@@ -81,26 +85,23 @@ def log_in(request):
     password = request.POST.get('password', None)
 
     if (not email):
-        raise ValidationError('Users must have email address')
+        raise ValidationError(EMPTY_EMAIL_FIELDS)
     
     if (not password):
-        raise ValidationError('Users must have password')
+        raise ValidationError(EMPTY_PASSWORD_FIELDS)
 
     validate_email(email)
 
     user = User.get_user(email=email) 
 
     if (not user.active):
-        raise ValidationError(
-            'Please validate your account'
-        )
+        raise ValidationError(ACCOUNT_NOT_ACTIVE)
 
-    if (user.check_password(password)):
-        raise Exception(
-            'Wrong Password'
-        )    
+    if (not user.check_password(password)):
+        raise ValidationError(WRONG_PASSWORD)    
     
     refresh = TokenObtainPairSerializer.get_token(user)
+    UserDeviceToken.objects.filter(author=user).update(active=False)
 
     device_token = UserDeviceToken.objects.create(
         author=user,
@@ -121,14 +122,12 @@ def forgot_password(request):
     email = request.POST.get('email', None)
 
     if (not email):
-        raise ValidationError('Users must have email address')
+        raise ValidationError(EMPTY_EMAIL_FIELDS)
 
     user = User.get_user(email=email)
     
     if (not user.active):
-        raise ValidationError(
-             'Please check your email and validate your account'
-        )
+        raise ValidationError(ACCOUNT_NOT_ACTIVE)
 
     send_email(
         user=user, 
@@ -140,37 +139,45 @@ def forgot_password(request):
 
 @api_view(['PUT'])
 @json_response
-def reset_password(request, token):
+def reset_password(request):
     password = request.POST.get('password', None)
 
     if (not password):
-        raise ValueError('Password must not be empty')
+        raise ValidationError(EMPTY_PASSWORD_FIELDS)
 
     password_validation.validate_password(password=password)
 
     try:
-        token = ResetPassword.objects.get(token=token)
+        token = ResetPassword.objects.get(token=request.query_params['token'])
     except:
-        raise Exception('Token is invalid')
+        raise ValidationError(INVALID_TOKEN)
     
     if (not token.active):
-        raise Exception('Not active')
+        raise Exception(NOT_ACTIVE)
     
     user = token.author
 
     ResetPassword.objects.filter(author=user).update(active=False)
 
-    if (token.created_at < datetime.now()):
-        raise Exception('Token is expired')
+    expr = token.created_at + timedelta(minutes=5)
+    if ( expr < datetime.now()):
+        raise ValidationError(EXPIRED_TOKEN)
     
-    ResetPassword.objects.create(
-        author=user,
-        token=token,
-        active=True,
-        created_at=datetime.now(),
-    )
+    token.active=True,
+    token.updated_at=datetime.now(),
+    token.save()
 
     user.set_password(password)
     user.save()
+
+    return True
+
+@api_view(['PUT'])
+@json_response
+def log_out(request):
+    token = validate_token(token=request.auth)
+    token.active = False
+    token.deactived_at = datetime.now()
+    token.save()
 
     return True
