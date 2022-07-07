@@ -16,7 +16,6 @@ def create_attachment(request):
     data = request.data.dict().copy()
     username = data.pop('user', None)
     file_name = data.pop('file_name', None) + str(datetime.now())
-    file = request.FILES.get('file_path', None)
     
     try:
         user = User.objects.get(
