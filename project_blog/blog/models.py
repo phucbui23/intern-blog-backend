@@ -1,6 +1,6 @@
 import uuid
-
 from django.db import models
+
 from user_account.models import User
 from attachment.models import Attachment
 
@@ -56,9 +56,49 @@ class Blog(models.Model):
         blank=True,
     )
 
-    def __str__(self) -> str:
-        return self.name
-
+class BlogAttachment(models.Model):
+    blog = models.ForeignKey(
+        to=Blog, 
+        on_delete=models.CASCADE,
+        to_field='uid',
+        related_name='blogattachment_fk_blog',
+        db_column='blog_uid',
+        db_constraint=False,
+        null=False,
+        blank=False,
+    )
+    attachment = models.ForeignKey(
+        to=Attachment, 
+        on_delete=models.CASCADE,
+        to_field='uid',
+        related_name='blogattachment_fk_attachment',
+        db_column='attachment_uid',
+        db_constraint=False,
+        null=False,
+        blank=False,
+    )
+    created_at = models.DateTimeField(
+        auto_now=False, 
+        auto_now_add=True,
+        null=False,
+        blank=False,
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        auto_now_add=False,
+        null=True,
+        blank=True,
+    )
+    
+    @staticmethod
+    def get_attachments_in_blog(blog):
+        try:
+            blogattachment = BlogAttachment.objects.filter(
+                blog=blog
+            )
+        except BlogAttachment.DoesNotExist:
+            blogattachment = None
+        return blogattachment
 
 class BlogHistory(models.Model):
     blog = models.ForeignKey(
