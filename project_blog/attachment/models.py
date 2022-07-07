@@ -76,3 +76,8 @@ class Attachment(models.Model):
         null=True, 
         blank=True,
     )
+    
+    @staticmethod
+    def get_attachment(uid):
+        attachment = Attachment.objects.get(uid=uid)
+        return attachment

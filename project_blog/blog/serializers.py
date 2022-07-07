@@ -1,6 +1,11 @@
 from rest_framework import serializers
 
-from .models import Blog, BlogHistory, BlogLike
+from .models import (
+    Blog, 
+    BlogAttachment, 
+    BlogHistory, 
+    BlogLike
+)
 
 
 class BlogSerializer(serializers.ModelSerializer):
@@ -11,6 +16,13 @@ class BlogSerializer(serializers.ModelSerializer):
             'is_published', 'created_at',
         )
         read_only_field = fields
+        
+class BlogAttachmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlogAttachment
+        fields = ('blog', 'attachment', 'created_at',
+                  'updated_at',)
+        read_only_fields = ('blog', 'attachment',)
             
 class BlogHistorySerializer(serializers.ModelSerializer):
     class Meta:

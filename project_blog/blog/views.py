@@ -6,12 +6,21 @@ from django.forms import ValidationError
 from rest_framework import filters
 from rest_framework.decorators import api_view
 
+from attachment.models import Attachment
+from attachment.serializers import AttachmentSerializer
 from tag.models import BlogTag, Tag
-from tag.serializers import TagSerializer, BlogTagSerializer
+from tag.serializers import TagSerializer
 from user_account.models import User
+from user_account.serializers import UserSerializer
+from utils.messages import TAG_NOT_EXIST, BLOG_NOT_EXIST
 from utils.api_decorator import json_response
 
-from .models import Blog, BlogHistory, BlogLike
+from .models import (
+    Blog, 
+    BlogAttachment, 
+    BlogHistory, 
+    BlogLike
+)
 from .serializers import (
     BlogHistorySerializer, 
     BlogLikeSerializer,
@@ -21,17 +30,23 @@ from .serializers import (
 @api_view(['POST'])
 @json_response
 def create_blog(request):
-    user = request.user
+    # user = request.user
     data = request.data.copy()
+    
+    _user = data.pop('author', None)
+    user = User.objects.get(username=_user)
+    
     tags = data.pop('tag', None)
+    attachments = data.pop('attachment', None)
     
     new_blog = Blog.objects.create(
         **data,
         author=user,
     )
     
-    # if tags is not None:
-    for tag in tags:
+    # create tag or add tag to blog if exist
+    if tags is not None:
+        for tag in tags:
             # get tag by name in the list of tags
             tag_name = tag.pop("name")
             _tag = Tag.get_tag_by_name(tag_name)
@@ -41,7 +56,6 @@ def create_blog(request):
                 _tag = Tag.objects.create(
                     author=user,
                     name=tag_name,
-                    description="",
                 )
                 
             blogtag = BlogTag.get_blog_tag(new_blog, _tag)
@@ -53,10 +67,26 @@ def create_blog(request):
                     tag=_tag,
                 )
     
-    return BlogSerializer(
+    data = BlogSerializer(
         instance=new_blog, 
         many=False,
     ).data
+    
+    # add attachment to the blog
+    if attachments is not None:
+        for attachment in attachments:
+            attachment_uid = attachment.pop("uid")
+            
+            new_attachment = Attachment.get_attachment(
+                attachment_uid
+            )
+            
+            blog_attachment = BlogAttachment.objects.create(
+                blog=new_blog,
+                attachment=new_attachment,
+            )
+    
+    return data
 
 
 @api_view(['GET'])
@@ -72,17 +102,21 @@ def get_blogs_by_tag(request):
         )
     except Tag.DoesNotExist:
         raise ValidationError(
-            message="Tag doesn't exist"
+            message=TAG_NOT_EXIST
         )
     
-    blogs = BlogTag.objects.filter(
-        tag=tag,
+    blogs = Blog.objects.prefetch_related(
+        'blogtag_fk_blog'
+    ).filter(
+        blogtag_fk_blog__tag=tag
     )
     
-    return BlogTagSerializer(
+    data = BlogSerializer(
         instance=blogs,
-        many=True,
-    ).data
+        many=True
+    ).data    
+    
+    return data
 
 
 @api_view(['GET'])
@@ -135,12 +169,19 @@ def get_blogs(request):
 @json_response
 def get_blog_detail(request):
     bloguid = request.GET.get('uid')
+    
     try:
         blog = Blog.objects.get(pk=bloguid)
     except Blog.DoesNotExist:
         raise ValidationError(
-            message="Blog doesn't exist"
+            message=BLOG_NOT_EXIST
         )
+        
+    num_like = BlogLike.objects.filter(
+        blog=blog
+    ).count()
+    
+    data = BlogSerializer(blog).data
         
     # join tables to get tag
     tags = Tag.objects.prefetch_related(
@@ -149,20 +190,46 @@ def get_blog_detail(request):
         blogtag_fk_tag__blog=blog
     )
     
-    data = BlogSerializer(blog).data
     data['tags'] = TagSerializer(
         instance=tags,
         many=True
     ).data
     
+    # get attachments in a blog
+    attachments = Attachment.objects.prefetch_related(
+        'blogattachment_fk_attachment'
+    ).filter(
+        blogattachment_fk_attachment__blog=blog
+    )
+    
+    data['attachments'] = AttachmentSerializer(
+        instance=attachments,
+        many=True
+    ).data
+    
+    # get author detail
+    author = User.objects.get(
+        id = blog.author.id
+    )
+    
+    data['author'] = UserSerializer(
+        instance=author,
+        many=False
+    ).data
+    
+    data['likes'] = num_like
+    
     return data
+
 
 @api_view(['POST'])
 @json_response
 def edit_blog(request):
-    user = request.user
-    
     data = request.data.copy()
+    
+    # user = request.user
+    _user = data.pop('author', None)
+    user = User.objects.get(username=_user)
     
     try:
         blog = Blog.objects.get(
@@ -170,17 +237,61 @@ def edit_blog(request):
         )
     except Blog.DoesNotExist:
         raise ValidationError(
-            message="Blog doesn't exist",
+            message=BLOG_NOT_EXIST,
         )
+        
+    try:
+        check = (blog.author==user)
+    except check is False:
+        raise ValidationError(
+            message="This user is not author"
+        )
+        
+    name = data.pop('name', blog.name)
+    content = data.pop('content', blog.content)
+    is_published = data.pop('is_published', blog.is_published)
+        
+    # create blog history when edit
+    # bloghistory = BlogHistory.objects.get(
+    #     blog=blog,
+    #     revision=1,
+    # )
+    # if BlogHistory.DoesNotExist:
+    #     bloghistory = BlogHistory.objects.create(
+    #         name=name,
+    #         content=content,
+    #         is_published=is_published,
+    #         blog=blog,
+    #         revision=1,
+    #         author=user,
+    #     )
+    # else:
+    #     old_revision = bloghistory.revision
+    #     # increase revision when edit
+    #     blog_history = BlogHistory.objects.create(
+    #         name=name,
+    #         content=content,
+    #         is_published=is_published,
+    #         blog=blog,
+    #         revision=old_revision+1,
+    #         author=user,
+    #     )
+        
+    # get list of tags in a blog before edit
+    blog_tags = Tag.objects.prefetch_related(
+        'blogtag_fk_tag'
+    ).filter(
+        blogtag_fk_tag__blog=blog
+    )
 
+    # change detail of blog
     blog.name = data.pop('name', blog.name)
     blog.content = data.pop('content', blog.content)
     blog.is_published = data.pop('is_published', blog.is_published)
     blog.save()
     
     tags = data.pop('tag', None)
-    removed_tags = data.pop('-tag', None)
-    
+    print(blog_tags[0].name)
     if tags is not None:
         for tag in tags:
             # get tag by name in the list of tags
@@ -202,32 +313,84 @@ def edit_blog(request):
                     blog=blog,
                     tag=_tag,
                 )
-                
-    if removed_tags is not None:
-        for tag in removed_tags:
-            tag_name = tag.pop("name")
-            _tag = Tag.get_tag_by_name(tag_name)
-                
-            blogtag = BlogTag.get_blog_tag(blog, _tag).delete()
+    
+    return BlogSerializer(blog).data
 
-    data = BlogSerializer(blog).data
+
+@api_view(['POST'])
+@json_response
+def create_blog_like(request):
+    # user = request.user
+    data = request.data.copy()
+    bloguid = data.pop("blog", None)
+    
+    userid = data.pop("author", None)
+    user = User.objects.get(id=userid)
+    
+    try:
+        blog = Blog.objects.get(pk=bloguid)
+    except Blog.DoesNotExist:
+        raise ValidationError(
+            message=BLOG_NOT_EXIST
+        )
+    
+    bloglike = BlogLike.objects.create(
+        **data,
+        author=user,
+        blog=blog,
+    )
+    
+    data = BlogLikeSerializer(bloglike).data
+    
+    data['blog'] = BlogSerializer(
+        instance=blog,
+        many=False
+    ).data
+    
+    # get author detail    
+    data['author'] = UserSerializer(
+        instance=user,
+        many=False
+    ).data
+    
     return data
 
 
-# @api_view(['POST'])
-# def create_blog_history(request):
-#     data = JSONParser().parse(request)
-#     serializer = BlogHistorySerializer(data=data)
-#     if serializer.is_valid():
-#         serializer.save()
-#         return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
-#     return JsonResponse(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['DELETE'])
+@json_response
+def blog_unlike(request):
+    # user = request.user
+    data = request.data.copy()
+    bloguid = data.pop("blog", None)
+    
+    userid = data.pop("author", None)
+    user = User.objects.get(id=userid)
+    
+    try:
+        blog = Blog.objects.get(pk=bloguid)
+    except Blog.DoesNotExist:
+        raise ValidationError(
+            message=BLOG_NOT_EXIST
+        )
+    
+    bloglike = BlogLike.objects.get(
+        author=user,
+        blog=blog,
+    ).delete()
+    
+    return None
 
-# @api_view(['POST'])
-# def create_blog_like(request):
-#     data = JSONParser().parse(request)
-#     serializer = BlogLikeSerializer(data=data)
-#     if serializer.is_valid():
-#         serializer.save()
-#         return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
-#     return JsonResponse(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+@json_response
+def delete_blog(request):
+    # user = request.user
+    data = request.GET.get('uid', None)
+    
+    
+    
+    blog = Blog.objects.get(
+        pk=data
+    ).delete()
+    
+    return None
