@@ -1,7 +1,5 @@
-import re
-from unicodedata import name
-
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.forms import ValidationError
 from rest_framework import filters
 from rest_framework.decorators import api_view
@@ -9,8 +7,11 @@ from rest_framework.decorators import api_view
 from attachment.models import Attachment
 from attachment.serializers import AttachmentSerializer
 from tag.models import BlogTag, Tag
-from tag.serializers import TagSerializer
+
+from tag.serializers import BlogTagSerializer, TagSerializer
 from user_account.models import User
+from utils.api_decorator import json_response, paginator
+
 from user_account.serializers import UserSerializer
 from utils.messages import TAG_NOT_EXIST, BLOG_NOT_EXIST
 from utils.api_decorator import json_response
@@ -119,45 +120,63 @@ def get_blogs_by_tag(request):
     return data
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @json_response
+@paginator
 def get_blogs(request):
-    data = request.data.dict().copy()
-    query_blogs_uid = data.pop('uid', None)
-    query_blogs_title = data.pop('name', None)
-    query_blogs_content = data.pop('content', None)
+    query_data = request.POST.get("keyword", '')
 
-    if query_blogs_uid:
-        return BlogSerializer( 
-            Blog.objects.get(uid=query_blogs_uid),
-            many=False
-        ).data
-
-    if query_blogs_title and query_blogs_content:
-        query_blogs = Blog.objects.filter(
-            name__icontains=query_blogs_title,
-            content__icontains=query_blogs_content,
+    if query_data is not '':
+        query_blogs = Blog.objects.select_related(
+            'author'
+        ).filter(
+            Q(author__username=query_data) |
+            Q(uid__icontains=query_data) |
+            Q(name__icontains=query_data) |
+            Q(content__icontains=query_data)
         )
 
-    elif query_blogs_title:
-        query_blogs = Blog.objects.filter(
-            name__icontains=query_blogs_title,
-        )
+        query_blogs.order_by('-updated_at')
 
-    elif query_blogs_content:
-        query_blogs = Blog.objects.filter(
-            content__icontains=query_blogs_content,
-        )
+    else:
+        query_blogs = Blog.objects.all().order_by('-created_at')
 
-    # paginator = Paginator(
-    #     object_list=query_blogs, 
-    #     per_page=3,
-    # )
+    # data = request.data.dict().copy()
+    # query_blogs_uid = data.pop('uid', None)
+    # query_blogs_title = data.pop('name', None)
+    # query_blogs_content = data.pop('content', None)
 
-    # return BlogSerializer(
-    #     instance={'data' : paginator}, 
-    #     many=True,
-    # ).data
+    # if query_blogs_uid:
+    #     return BlogSerializer( 
+    #         Blog.objects.get(uid=query_blogs_uid),
+    #         many=False
+    #     ).data
+
+    # if query_blogs_title and query_blogs_content:
+    #     query_blogs = Blog.objects.filter(
+    #         name__icontains=query_blogs_title,
+    #         content__icontains=query_blogs_content,
+    #     )
+
+    # elif query_blogs_title:
+    #     query_blogs = Blog.objects.filter(
+    #         name__icontains=query_blogs_title,
+    #     )
+
+    # elif query_blogs_content:
+    #     query_blogs = Blog.objects.filter(
+    #         content__icontains=query_blogs_content,
+    #     )
+
+    # # paginator = Paginator(
+    # #     object_list=query_blogs, 
+    # #     per_page=3,
+    # # )
+
+    # # return BlogSerializer(
+    # #     instance={'data' : paginator}, 
+    # #     many=True,
+    # # ).data
 
     return BlogSerializer(
         query_blogs,
