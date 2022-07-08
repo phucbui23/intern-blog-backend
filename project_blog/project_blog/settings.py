@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'email_logs',
     'oauth',
     'attachment',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -55,9 +56,15 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = 'project_blog.urls'
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
 
 TEMPLATES = [
     {
@@ -146,7 +153,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'trumbb301@gmail.com'
 EMAIL_HOST_PASSWORD = 'ttfohmbshqtxfijn'
-DOMAIN = 'http://127.0.0.1:8000'
+DOMAIN = 'http://192.168.30.143:8000'
 
 
 SIMPLE_JWT = {
