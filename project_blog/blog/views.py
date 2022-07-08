@@ -1,5 +1,6 @@
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.db.models import Max
 from django.forms import ValidationError
 from rest_framework import filters
 from rest_framework.decorators import api_view
@@ -10,6 +11,7 @@ from tag.models import BlogTag, Tag
 from tag.serializers import BlogTagSerializer, TagSerializer
 from user_account.models import User
 from user_account.serializers import UserSerializer
+from utils.validate_token import validate_token
 from utils.api_decorator import json_response, paginator
 from utils.api_decorator import json_response
 from utils.messages import (
@@ -35,7 +37,8 @@ from .serializers import (
 @json_response
 def create_blog(request):
     data = request.data.copy()
-    # print(request.user)
+    validate_token(request.auth)
+    user = request.user
     
     name = data.pop('name', None)
     content = data.pop('content', None)
@@ -114,11 +117,11 @@ def create_blog(request):
     return data
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @json_response
 @paginator
 def get_blogs_by_tag(request):
-    tag_name = request.GET.get('tag', None)
+    tag_name = request.POST.get('tag', None)
     
     if (len(tag_name) > 255):
         raise ValidationError(MAX_LENGTH_TAG_NAME)
@@ -209,10 +212,10 @@ def get_blogs(request):
     ).data
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @json_response
 def get_blog_detail(request):
-    bloguid = request.GET.get('uid')
+    bloguid = request.POST.get('uid', None)
     
     try:
         blog = Blog.objects.get(pk=bloguid)
@@ -268,10 +271,8 @@ def get_blog_detail(request):
 @json_response
 def edit_blog(request):
     data = request.data.copy()
-    
-    # user = request.user
-    _user = data.pop('author', None)
-    user = User.objects.get(username=_user)
+    validate_token(request.auth)
+    user = request.user
     
     try:
         blog = Blog.objects.get(
@@ -283,9 +284,6 @@ def edit_blog(request):
     name = data.pop('name', blog.name)
     content = data.pop('content', blog.content)
     is_published = data.pop('is_published', blog.is_published)
-    
-    if (name is None):
-        raise ValidationError(EMPTY_NAME_BLOG)
     
     if (len(name) > 255):
         raise ValidationError(MAX_LENGTH_BLOG_NAME)
@@ -299,30 +297,35 @@ def edit_blog(request):
     blog.save()
         
     # create blog history when edit
-    # bloghistory = BlogHistory.objects.get(
-    #     blog=blog,
-    #     revision=1,
-    # )
-    # if BlogHistory.DoesNotExist:
-    #     bloghistory = BlogHistory.objects.create(
-    #         name=name,
-    #         content=content,
-    #         is_published=is_published,
-    #         blog=blog,
-    #         revision=1,
-    #         author=user,
-    #     )
-    # else:
-    #     old_revision = bloghistory.revision
-    #     # increase revision when edit
-    #     blog_history = BlogHistory.objects.create(
-    #         name=name,
-    #         content=content,
-    #         is_published=is_published,
-    #         blog=blog,
-    #         revision=old_revision+1,
-    #         author=user,
-    #     )
+    bloghistory = BlogHistory.objects.get(
+        blog=blog,
+        revision=1,
+    )
+    
+    if BlogHistory.DoesNotExist:
+        bloghistory = BlogHistory.objects.create(
+            name=name,
+            content=content,
+            is_published=is_published,
+            blog=blog,
+            revision=1,
+            author=user,
+        )
+    else:
+        bloghistory = BlogHistory.objects.filter(
+            blog=blog
+        ).aggregate(Max('revision'))
+        old_revision = bloghistory.revision
+        
+        # increase revision when edit
+        blog_history = BlogHistory.objects.create(
+            name=name,
+            content=content,
+            is_published=is_published,
+            blog=blog,
+            revision=old_revision+1,
+            author=user,
+        )
         
     # get list of tags in a blog before edit
     blog_tags = Tag.objects.prefetch_related(
@@ -332,35 +335,41 @@ def edit_blog(request):
     )
     
     tags = data.pop('tag', None)
+    
+    for blog_tag in blog_tags:
+        tag_existed = blog_tag.name
+        tag_name = None
+        
+        for tag in tags:
+            tag_name = tag.pop("name")
+            
+            if tag_name != tag_existed:
+                continue
+            
+        if tag_name != tag_existed:
+            blogtag_delete = BlogTag.objects.get(
+                                blog=blog,
+                                tag=tag_existed
+                            ).delete()
+    
     if tags is not None:
         for tag in tags:
             # get tag by name in the list of tags
             tag_name = tag.pop("name")
-            
-            exist = False
-            for blog_tag in blog_tags:
-                if blog_tag.name != tag_name:
-                    exist = False
-                else:
-                    exist = True
-                    break
-            
-            _tag = Tag.get_tag_by_name(tag_name)
-            
+            tag_object = Tag.get_tag_by_name(tag_name)
+                
             # if tag not exist, create tag
-            if _tag is None:
-                _tag = Tag.objects.create(
+            if tag_object is None:
+                tag_object = Tag.objects.create(
                     author=blog.author,
                     name=tag_name,
                     description="",
                 )
                 
-            blogtag = BlogTag.get_blog_tag(blog, _tag)            
-            # create blogtag for every tag if not exist
-            if blogtag is None:
-                blogtag = BlogTag.objects.create(
+            if tag_object not in blog_tags:
+                new_blogtag = BlogTag.objects.create(
                     blog=blog,
-                    tag=_tag,
+                    tag=tag_object
                 )
     
     return BlogSerializer(blog).data
@@ -369,12 +378,10 @@ def edit_blog(request):
 @api_view(['POST'])
 @json_response
 def create_blog_like(request):
+    validate_token(request.auth)
+    user = request.user
     data = request.data.copy()
     bloguid = data.pop("blog", None)
-    
-    # user = request.user
-    userid = data.pop("author", None)
-    user = User.objects.get(id=userid)
     
     try:
         blog = Blog.objects.get(pk=bloguid)
@@ -406,12 +413,10 @@ def create_blog_like(request):
 @api_view(['DELETE'])
 @json_response
 def blog_unlike(request):
-    # user = request.user
+    validate_token(request.auth)
+    user = request.user
     data = request.data.copy()
     bloguid = data.pop("blog", None)
-    
-    userid = data.pop("author", None)
-    user = User.objects.get(id=userid)
     
     try:
         blog = Blog.objects.get(pk=bloguid)
@@ -431,12 +436,12 @@ def blog_unlike(request):
 @api_view(['DELETE'])
 @json_response
 def delete_blog(request):
-    # user = request.user
+    user = request.user
+    validate_token(request.auth)
     data = request.GET.get('uid', None)
     
-    
-    
     blog = Blog.objects.get(
+        author=user,
         pk=data
     ).delete()
     
