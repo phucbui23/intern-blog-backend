@@ -23,4 +23,5 @@ urlpatterns = [
     path('blogs/', include('blog.urls')),
     path('tags/', include('tag.urls')),
     path('attachments/', include('attachment.urls')),
+    path('notifications/', include('notification.urls')),
 ]
