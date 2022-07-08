@@ -17,3 +17,12 @@ MAX_LENGTH_FULLNAME = 'Full name is only maximum 255 chars'
 MAX_LENGTH_NICK_NAME = 'NICK name is only maximum 255 chars'
 MAX_LENGTH_EMAIL = 'Email is only maximum 255 chars'
 MAX_LENGTH_PASSWORD = 'Password is only maximum 255 chars'
+
+TAG_NOT_EXIST = "Tag does not exist"
+BLOG_NOT_EXIST = "Blog does not exist"
+EMPTY_NAME_BLOG = "Name of blog must not be empty"
+EMPTY_CONTENT_BLOG = "Content of blog must not be empty"
+EMPTY_BLOG_STATUS = "Blog status must not be empty"
+MAX_LENGTH_BLOG_NAME = "Name of blog is only maximum 255 chars"
+MAX_LENGTH_BLOG_CONTENT = "Content of blog is only maximum 255 chars"
+MAX_LENGTH_TAG_NAME = "Name of tag is only maximum 255 chars"
