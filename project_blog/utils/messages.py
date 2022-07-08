@@ -1,6 +1,9 @@
 EMPTY_PASSWORD_FIELDS = 'Password must not be empty'
 EMPTY_EMAIL_FIELDS = 'Email must not be empty'
 EMPTY_FULLNAME_FIELDS = 'Full name must not be empty'
+EMPTY_NICKNAME_FIELDS = 'Nick name must not be empty'
+EMPTY_PHONENUMBER_FIELDS = 'Phone number must not be empty'
+INVALID_EMAIL = 'Invalid format email'
 INVALID_TOKEN = 'Token is invalid'
 EXPIRED_TOKEN = 'Token is expired'
 NOT_ACTIVE = 'Not active'
@@ -17,7 +20,7 @@ MAX_LENGTH_PHONE_NUMBER = 'Phone number is only maximum 16 chars'
 MAX_LENGTH_FULLNAME = 'Full name is only maximum 255 chars'
 MAX_LENGTH_NICK_NAME = 'NICK name is only maximum 255 chars'
 MAX_LENGTH_EMAIL = 'Email is only maximum 255 chars'
-MAX_LENGTH_PASSWORD = 'Password is only maximum 255 chars'
+INVALID_LENGTH_PASSWORD = 'Password is only maximum 255 chars and minimum 8 chars'
 
 TAG_NOT_EXIST = "Tag does not exist"
 BLOG_NOT_EXIST = "Blog does not exist"

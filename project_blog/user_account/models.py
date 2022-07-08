@@ -124,7 +124,7 @@ class User(AbstractBaseUser):
         return True
     
     def __str__(self) -> str:
-        return self.username
+        return self.email
 
     @staticmethod
     def get_user(email):
