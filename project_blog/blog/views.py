@@ -54,10 +54,6 @@ def create_blog(request):
     if (len(content) > 255):
         raise ValidationError(MAX_LENGTH_BLOG_CONTENT)
     
-    # user = request.user
-    _user = data.pop('author', None)
-    user = User.objects.get(username=_user)
-    
     tags = data.pop('tag', None)
     attachments = data.pop('attachment', None)
     
