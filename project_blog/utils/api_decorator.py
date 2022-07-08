@@ -3,7 +3,8 @@ from django.forms import ValidationError
 from rest_framework import status
 from rest_framework.response import Response
 
-DEFAULT_ITEMS_PER_PAGE = 5
+from utils.constant import DEFAULT_ITEMS_PER_PAGE
+
 
 def paginator(func):
     def wrapper(*args, **kwargs):
@@ -14,9 +15,17 @@ def paginator(func):
         )
         page = args[0].GET.get('page')
         page_objects = p.get_page(page)
-        
-        return page_objects.object_list
 
+        d = {
+            'blog_objects': page_objects.object_list,
+            'total_blogs': p.count,
+            'total_pages': page_objects.paginator.num_pages,
+            'current': page_objects.number,
+            'has_next': page_objects.has_next(),
+            'has_prev': page_objects.has_previous()
+        }
+        return d
+        
     return wrapper
 
 def json_response(func):
