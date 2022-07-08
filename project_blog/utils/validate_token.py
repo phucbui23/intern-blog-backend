@@ -8,7 +8,7 @@ from oauth.models import UserDeviceToken
 def validate_token(token):
     try:
         token = UserDeviceToken.objects.get(token=token)
-    except NotFound:
+    except UserDeviceToken.DoesNotExist:
         raise NotFound(INVALID_TOKEN)
         
     if not token.active:

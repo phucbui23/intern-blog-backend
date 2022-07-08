@@ -174,3 +174,6 @@ class Follower(models.Model):
         null=True,
         blank=True,
     )
+
+    def __str__(self) -> str:
+        return self.follower.email
