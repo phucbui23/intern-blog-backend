@@ -84,13 +84,13 @@ def edit_profile(request):
     full_name = request.POST.get('full_name', user.full_name)
     nick_name = request.POST.get('nick_name', user.nick_name)
     
-    if (len(phone_number) > 16):
+    if (phone_number and len(phone_number) > 16):
         raise ValidationError(MAX_LENGTH_PHONE_NUMBER)
     
-    if (len(full_name) > 255):
+    if (full_name and len(full_name) > 255):
         raise ValidationError(MAX_LENGTH_FULLNAME)
     
-    if (len(nick_name) > 255):
+    if (nick_name and len(nick_name) > 255):
         raise ValidationError(MAX_LENGTH_NICK_NAME)
     
     

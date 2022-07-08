@@ -9,16 +9,19 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email', 'phone_number',
-                  'full_name', 'nick_name', 'quote',)
+                  'full_name', 'nick_name', 'quote','avatar')
         read_only_fields = fields
 
-    # def to_representation(self, instance):
-    #     data = super().to_representation(instance)
-    #     avatar = Attachment.objects.get(
-    #         user=instance,
-    #     )
-    #     data['avatar'] = AttachmentSerializer(instance=avatar, many=False).data
-    #     return data
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        try:    
+            avatar = Attachment.objects.get(
+                user=instance,
+            )
+        except Attachment.DoesNotExist:
+            avatar = []
+        data['avatar'] = AttachmentSerializer(instance=avatar, many=False).data
+        return data
 
 
 class FollowerSerializer(serializers.ModelSerializer):
