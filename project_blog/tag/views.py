@@ -1,38 +1,20 @@
-from django.forms import ValidationError
+from django.db.models import Count
 from rest_framework.decorators import api_view
 
 from utils.api_decorator import json_response
-from user_account.models import User
-from blog.models import Blog
 
-from .models import Tag, BlogTag
-from .serializers import BlogTagSerializer, TagSerializer
+from .models import BlogTag
 
 
-@api_view(['POST'])
+@api_view(['GET'])
 @json_response
-def create_tag(request):    
-    data = request.POST.dict().copy()
-    username = data.pop('author', None)
-    
-    # check if user exists
-    try:
-        user = User.objects.get(
-            username=username,
-        )
-    except User.DoesNotExist:
-        raise ValidationError(
-            message="User doesn't exist"
-        )
-        
-    new_tag = Tag.objects.create(
-        **data,
-        author=user,
+def get_most_used_tag(request):
+    data = BlogTag.objects.values_list(
+        'tag__name'
+    ).annotate(
+        tag_count=Count('tag')
+    ).order_by(
+        '-tag_count'
     )
-    
-    data = TagSerializer(
-        instance=new_tag, 
-        many=False,
-    ).data
     
     return data
