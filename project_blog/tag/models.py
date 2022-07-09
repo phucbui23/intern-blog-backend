@@ -10,16 +10,6 @@ class Tag(models.Model):
         null=False,
         blank=False,
     )
-    author = models.ForeignKey(
-        to=User, 
-        on_delete=models.CASCADE,
-        to_field='id',
-        related_name='tag_fk_author',
-        db_column='author_id',
-        db_constraint=False,
-        null=False,
-        blank=False,
-    )
     description = models.TextField(
         null=True, 
         blank=True,
