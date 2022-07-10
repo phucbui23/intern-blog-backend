@@ -10,10 +10,10 @@ from utils.validate_input import (
     validate_email, validate_password,
     validate_fullname, validate_nickname, validate_phone_number)
 from utils.messages import (
-    EXIST_USER, WRONG_PASSWORD, 
-    NOT_SAME_PASSWORD, NOT_FOUND_BLOG, NOT_FOUND_USER
+    WRONG_PASSWORD, NOT_SAME_PASSWORD, NOT_FOUND_BLOG, 
+    NOT_FOUND_USER, ACCOUNT_ACTIVE, ACCOUNT_NOT_ACTIVE
     )
-from blog.models import Blog
+from blog.models import Blog, BlogLike
 
 from .models import User, Follower
 from .serializers import FollowerSerializer, UserSerializer
@@ -26,10 +26,24 @@ def get_user_info(request):
     validate_token(token=request.auth)
     user = User.objects.get(email=request.user.email)
     
-    return UserSerializer(
+    blog =  Blog.objects.filter(author=user, is_published=True)
+    blog_num = blog.count()
+    like_num = 0
+    for each_blog in blog:
+        like_num += BlogLike.objects.filter(blog=each_blog).count()
+        
+    follow_num = Follower.objects.filter(author=user, active=True).count()
+
+    data = UserSerializer(
         instance=user,
         many=False,
     ).data
+
+    data['blog_numbers'] = blog_num
+    data['like_numbers'] = like_num
+    data['follow_numbers'] = follow_num
+
+    return data
 
 
 @api_view(['POST'])
@@ -44,34 +58,33 @@ def sign_up(request):
     validate_nickname(nick_name=nickname)
 
     try:
-        User.get_user(email=email)
-        is_has_user = True
+        exist_user = User.get_user(email=email)
+        if (exist_user.active):
+            raise Exception(ACCOUNT_ACTIVE)
+        else:
+            raise Exception(ACCOUNT_NOT_ACTIVE)
     except NotFound:
-        is_has_user = False
 
-    if (is_has_user):
-        raise ValidationError(EXIST_USER)
+        username = email.split('@')[0]
+        user = User.objects.create( 
+            email=email, 
+            username=username,
+            full_name=fullname,
+            nick_name=nickname,
+            active=False,
+            is_superuser=False,
+            is_admin=False,
+        )
+        
+        send_email(
+            user=user, 
+            type_email=Type.ACTIVATE,
+        )
 
-    username = email.split('@')[0]
-    user = User.objects.create( 
-        email=email, 
-        username=username,
-        full_name=fullname,
-        nick_name=nickname,
-        active=False,
-        is_superuser=False,
-        is_admin=False,
-    )
-    
-    send_email(
-        user=user, 
-        type_email=Type.ACTIVATE,
-    )
-
-    return UserSerializer(
-        instance=user,
-        many=False,
-    ).data
+        return UserSerializer(
+            instance=user,
+            many=False,
+        ).data
 
 
 @api_view(['PUT'])
@@ -88,7 +101,6 @@ def edit_profile(request):
     validate_phone_number(phone_number=phone_number)
     validate_fullname(full_name=full_name)
     validate_nickname(nick_name=nick_name)
-    
     
     user.phone_number = phone_number
     user.full_name = full_name

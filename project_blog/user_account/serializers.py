@@ -21,7 +21,9 @@ class UserSerializer(serializers.ModelSerializer):
             avatar = Attachment.objects.get(
                 user=instance,
             )
-            data['avatar'] = AttachmentSerializer(instance=avatar, many=False).data
+            avatar_data = AttachmentSerializer(instance=avatar, many=False).data
+            avatar_data.pop('user')
+            data['avatar'] = avatar_data
         except Attachment.DoesNotExist:
             avatar = None
             
@@ -47,3 +49,4 @@ class FollowerSerializer(serializers.ModelSerializer):
         data['follower'] = UserSerializer(instance=follower, many=False).data
         
         return data
+        

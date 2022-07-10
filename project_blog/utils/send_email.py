@@ -11,7 +11,7 @@ def send_email(user, type_email):
     token = gen_token()
     try:
         if (type_email == Type.ACTIVATE):
-            url = f'{settings.DOMAIN}/oauths/activate?token={token}'
+            url = f'{settings.DOMAIN}/activateaccount?token={token}'
             subject = 'Activate Account'
             body = f'Hi {user.full_name} Use link below to verify your email: {url}'
             
@@ -21,7 +21,7 @@ def send_email(user, type_email):
                 active=True,
             )
         elif (type_email == Type.RESET_PASSWORD):   
-            url = f'{settings.DOMAIN}/oauths/reset?token={token}'
+            url = f'{settings.DOMAIN}/activateaccount?token={token}'
             subject = 'Reset Password'
             body = f'Hi {user.full_name} Please click this link to reset your password: {url}'
 

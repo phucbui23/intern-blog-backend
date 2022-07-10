@@ -53,7 +53,7 @@ class User(AbstractBaseUser):
     objects = UserManager()
     REQUIRED_FIELD = ('email',)
     USERNAME_FIELD = 'email'
-    username = models.CharField(max_length=255, unique=True)
+    username = models.CharField(max_length=255)
     email = models.CharField(
         max_length=255,
         null=False,
