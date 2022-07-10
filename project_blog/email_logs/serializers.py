@@ -7,5 +7,4 @@ class EmailLogsSerialier(serializers.ModelSerializer):
         model = EmailLogs
         fields = ('author','type', 'subject')
         read_only_fields = fields
-
-
+        
