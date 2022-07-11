@@ -11,7 +11,6 @@ from tag.models import BlogTag, Tag
 from tag.serializers import TagSerializer
 from user_account.models import User
 from user_account.serializers import UserSerializer
-from utils.validate_token import validate_token
 from utils.api_decorator import json_response, paginator
 from utils.messages import *
 
@@ -104,7 +103,6 @@ def get_matrix_blogs(request):
 @api_view(['POST'])
 @json_response
 def create_blog(request):
-    validate_token(request.auth)
     user = request.user
     data = request.data.copy()
     
@@ -334,7 +332,6 @@ def get_blog_detail(request):
 @api_view(['POST'])
 @json_response
 def edit_blog(request):
-    validate_token(request.auth)
     user = request.user
     data = request.data.copy()
     
@@ -438,7 +435,6 @@ def edit_blog(request):
 @api_view(['POST'])
 @json_response
 def create_blog_like(request):
-    validate_token(request.auth)
     user = request.user
     data = request.data.copy()
     bloguid = data.pop("blog", None)
@@ -473,7 +469,6 @@ def create_blog_like(request):
 @api_view(['DELETE'])
 @json_response
 def blog_unlike(request):
-    validate_token(request.auth)
     user = request.user
     data = request.data.copy()
     bloguid = data.pop("blog", None)
@@ -496,7 +491,6 @@ def blog_unlike(request):
 @api_view(['DELETE'])
 @json_response
 def delete_blog(request):
-    validate_token(request.auth)
     user = request.user
     data = request.GET.get('uid', None)
     

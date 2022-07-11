@@ -6,12 +6,8 @@ from datetime import datetime, timedelta
 from utils.api_decorator import json_response
 from utils.send_email import send_email
 from utils.enums import Type
-from utils.validate_token import validate_token
-from utils.validate_input import (validate_email ,validate_password)
-from utils.messages import (
-        INVALID_TOKEN, NOT_ACTIVE,EXPIRED_TOKEN,
-        ACCOUNT_ACTIVE, ACCOUNT_NOT_ACTIVE, WRONG_PASSWORD
-    )
+from utils.validate_input import validate_email, validate_password
+from utils.messages import *
 from user_account.models import User
 
 from .models import UserActivation, UserDeviceToken, ResetPassword
@@ -159,7 +155,7 @@ def reset_password(request):
 @api_view(['PUT'])
 @json_response
 def log_out(request):
-    token = validate_token(token=request.auth)
+    token = UserDeviceToken.objects.get(token=request.auth)
     token.active = False
     token.deactived_at = datetime.now()
     token.save()

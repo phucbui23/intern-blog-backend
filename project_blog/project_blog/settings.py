@@ -123,7 +123,6 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Bangkok'
 
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
@@ -143,7 +142,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny'
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication'
+        'oauth.authenticate_token.JWTAuthentication'
     ],
 }
 
@@ -153,7 +152,6 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'trumbb301@gmail.com'
 EMAIL_HOST_PASSWORD = 'ttfohmbshqtxfijn'
-DOMAIN = 'http://localhost:3000'
 
 
 SIMPLE_JWT = {
