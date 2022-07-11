@@ -3,12 +3,6 @@ from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, ValidationError
 from utils.api_decorator import json_response, paginator
 from utils.enums import Type
-from utils.messages import (EMPTY_EMAIL_FIELDS, EMPTY_FIELDS,
-                            EMPTY_FULLNAME_FIELDS, EXIST_USER,
-                            MAX_LENGTH_EMAIL, MAX_LENGTH_FULLNAME,
-                            MAX_LENGTH_NICK_NAME, MAX_LENGTH_PASSWORD,
-                            MAX_LENGTH_PHONE_NUMBER, NOT_SAME_PASSWORD,
-                            USER_NOT_FOUND, WRONG_PASSWORD)
 from utils.send_email import send_email
 from utils.validate_token import validate_token
 from utils.validate_input import (
@@ -24,13 +18,12 @@ from .models import User, Follower
 from .serializers import FollowerSerializer, UserSerializer
 
 
-from .models import Follower, User
-from .serializers import FollowerSerializer, UserSerializer
 
 @api_view()
 @json_response
 def get_user_info(request):
     validate_token(token=request.auth)
+    print(request.user)
     user = User.objects.get(email=request.user.email)
     
     blog =  Blog.objects.filter(author=user, is_published=True)
