@@ -1,3 +1,4 @@
+from decouple import config
 from django.core.mail import EmailMessage
 from django.forms import ValidationError
 from django.conf import settings
@@ -7,11 +8,10 @@ from utils.gen_token import gen_token
 from .enums import Type
 
 def send_email(user, type_email):
-
     token = gen_token()
     try:
         if (type_email == Type.ACTIVATE):
-            url = f'{settings.DOMAIN}/activateaccount?token={token}'
+            url = f'{config("DOMAIN")}/activateaccount?token={token}'
             subject = 'Activate Account'
             body = f'Hi {user.full_name} Use link below to verify your email: {url}'
             
@@ -21,7 +21,7 @@ def send_email(user, type_email):
                 active=True,
             )
         elif (type_email == Type.RESET_PASSWORD):   
-            url = f'{settings.DOMAIN}/activateaccount?token={token}'
+            url = f'{config("DOMAIN")}/reset?token={token}'
             subject = 'Reset Password'
             body = f'Hi {user.full_name} Please click this link to reset your password: {url}'
 
