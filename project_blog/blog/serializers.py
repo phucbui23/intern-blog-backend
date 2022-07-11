@@ -1,4 +1,6 @@
+from attachment.serializers import AttachmentSerializer
 from rest_framework import serializers
+from tag.serializers import BlogTagSerializer, TagSerializer
 
 from attachment.models import Attachment
 from attachment.serializers import AttachmentSerializer
@@ -15,10 +17,13 @@ from .models import (
 
 
 class BlogSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(read_only=True, many=True)
+    attachment = AttachmentSerializer(read_only=True, many=False)
+
     class Meta:
         model = Blog
         fields = (
-            'uid', 'name', 'author', 'content',
+            'uid', 'name', 'author', 'tags', 'attachment' ,'content',
             'is_published', 'created_at',
         )
         read_only_field = fields

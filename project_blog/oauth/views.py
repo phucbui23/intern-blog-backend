@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError
-from datetime import datetime, timedelta
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from datetime import datetime, timedelta
 
 from utils.api_decorator import json_response
 from utils.send_email import send_email
@@ -130,7 +130,6 @@ def reset_password(request):
     password = request.POST.get('password', None)
 
     validate_password(password=password)
-    print(request.query_params['token'])
     try:
         token = ResetPassword.objects.get(token=request.query_params['token'])
     except:

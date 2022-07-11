@@ -17,6 +17,7 @@ class UserManager(BaseUserManager):
         user = self.model(
             email=email,
         )
+        user.username = email.split('@')[0]
         user.set_password(password)
         user.is_superuser = False
         user.is_admin = False
@@ -53,7 +54,7 @@ class User(AbstractBaseUser):
     objects = UserManager()
     REQUIRED_FIELD = ('email',)
     USERNAME_FIELD = 'email'
-    username = models.CharField(max_length=255, unique=True)
+    username = models.CharField(max_length=255)
     email = models.CharField(
         max_length=255,
         null=False,
