@@ -1,10 +1,12 @@
 import uuid
 from django.db import models
+from django.forms import ValidationError
 
 from user_account.models import User
 from attachment.models import Attachment
-from django.forms import ValidationError
-from utils.messages import BLOG_NOT_EXIST, MAX_LENGTH_BLOG_NAME, MAX_LENGTH_BLOG_CONTENT
+from utils.messages import (
+    BLOG_NOT_EXIST, MAX_LENGTH_BLOG_NAME, MAX_LENGTH_BLOG_CONTENT
+)
 
 class Blog(models.Model):
     uid = models.UUIDField(
@@ -88,8 +90,8 @@ class Blog(models.Model):
    
         
 
-    def __str__(self) -> str:
-        return self.name
+    # def __str__(self) -> str:
+    #     return self.name
 
 class BlogAttachment(models.Model):
     blog = models.ForeignKey(

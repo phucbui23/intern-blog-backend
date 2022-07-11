@@ -1,12 +1,13 @@
 from django.db import models
 
 from user_account.models import User
+from utils.enums import Notification_type
 
 
 class Notification(models.Model):
     type = models.TextField(
-        null=False,
-        blank=False,
+        choices=Notification_type.choices, 
+        default=Notification_type.BLOG_LIKED,
     )
     
     subject = models.TextField(
