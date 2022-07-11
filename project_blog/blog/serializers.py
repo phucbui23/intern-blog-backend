@@ -1,8 +1,18 @@
 from attachment.serializers import AttachmentSerializer
 from rest_framework import serializers
-from tag.serializers import BlogTagSerializer, TagSerializer
 
-from .models import Blog, BlogAttachment, BlogHistory, BlogLike
+from attachment.models import Attachment
+from attachment.serializers import AttachmentSerializer
+from tag.serializers import TagSerializer
+from tag.models import Tag
+from user_account.models import User
+
+from .models import (
+    Blog, 
+    BlogAttachment, 
+    BlogHistory, 
+    BlogLike
+)
 
 
 class BlogSerializer(serializers.ModelSerializer):
@@ -16,6 +26,50 @@ class BlogSerializer(serializers.ModelSerializer):
             'is_published', 'created_at',
         )
         read_only_field = fields
+        
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        
+        try:
+            blog_attachment = BlogAttachment.objects.filter(
+                blog=instance
+            ).first()
+            
+            if blog_attachment != None:
+                thumbnail = blog_attachment.attachment
+                data['thumbnail'] = AttachmentSerializer(
+                    instance=thumbnail, 
+                    many=False
+                ).data
+            else:
+                data['thumbnail'] = None
+        except Attachment.DoesNotExist:
+            thumbnail = None
+            
+        try:
+            tags = Tag.objects.prefetch_related(
+                'blogtag_fk_tag'
+            ).filter(
+                blogtag_fk_tag__blog=instance
+            )
+            
+            data['tags'] = TagSerializer(
+                instance=tags,
+                many=True
+            ).data
+        except Tag.DoesNotExist:
+            tags = None  
+            
+        try:
+            likes = BlogLike.objects.filter(
+                blog=instance
+            ).count()
+            
+            data['likes'] = likes
+        except BlogLike.DoesNotExist:
+            likes = 0
+            
+        return data
         
 class BlogAttachmentSerializer(serializers.ModelSerializer):
     class Meta:

@@ -200,6 +200,7 @@ def get_blogs_by_tag(request):
         ).filter(
             blogtag_fk_blog__tag=tag
         )
+        
     else:
         blogs = Blog.objects.all().order_by('-created_at')
     
@@ -210,6 +211,87 @@ def get_blogs_by_tag(request):
         many=True
     ).data
 
+
+@api_view(['POST'])
+@json_response
+@paginator
+def get_blogs(request):
+    query_data = request.POST.get("keyword", '')
+
+    if query_data is not '':
+        query_blogs = Blog.objects.select_related(
+            'author'
+        ).filter(
+            Q(author__username=query_data) |
+            Q(uid__icontains=query_data) |
+            Q(name__icontains=query_data) |
+            Q(content__icontains=query_data)
+        )
+
+        query_blogs.order_by('-updated_at')
+
+    else:
+        query_blogs = Blog.objects.all().order_by('-created_at')
+
+    # data = request.data.dict().copy()
+    # query_blogs_uid = data.pop('uid', None)
+    # query_blogs_title = data.pop('name', None)
+    # query_blogs_content = data.pop('content', None)
+
+    # if query_blogs_uid:
+    #     return BlogSerializer( 
+    #         Blog.objects.get(uid=query_blogs_uid),
+    #         many=False
+    #     ).data
+
+    # if query_blogs_title and query_blogs_content:
+    #     query_blogs = Blog.objects.filter(
+    #         name__icontains=query_blogs_title,
+    #         content__icontains=query_blogs_content,
+    #     )
+
+    # elif query_blogs_title:
+    #     query_blogs = Blog.objects.filter(
+    #         name__icontains=query_blogs_title,
+    #     )
+
+    # elif query_blogs_content:
+    #     query_blogs = Blog.objects.filter(
+    #         content__icontains=query_blogs_content,
+    #     )
+
+    # # paginator = Paginator(
+    # #     object_list=query_blogs, 
+    # #     per_page=3,
+    # # )
+
+    # # return BlogSerializer(
+    # #     instance={'data' : paginator}, 
+    # #     many=True,
+    # # ).data
+    
+    data = BlogSerializer(
+            query_blogs,
+            many=True,
+        ).data
+    
+    for query_blog in query_blogs:
+        blog_attachments = BlogAttachment.objects.filter(
+            blog=query_blog,
+        )
+        
+        blog_attachments_uid = blog_attachments.values_list(
+            'attachment__uid',
+            flat=True,
+        )
+        
+        author = User.objects.get(
+            id=query_blog.author.id
+        )
+        
+        # print(UserSerializer(author).data)
+    
+    return data
 
 
 @api_view(['POST'])
@@ -223,18 +305,6 @@ def get_blog_detail(request):
         raise ValidationError(BLOG_NOT_EXIST)
     
     data = BlogSerializer(blog).data
-        
-    # join tables to get tag
-    tags = Tag.objects.prefetch_related(
-        'blogtag_fk_tag'
-    ).filter(
-        blogtag_fk_tag__blog=blog
-    )
-    
-    data['tags'] = TagSerializer(
-        instance=tags,
-        many=True
-    ).data
     
     # get attachments in a blog
     attachments = Attachment.objects.prefetch_related(
@@ -250,19 +320,13 @@ def get_blog_detail(request):
     
     # get author detail
     author = User.objects.get(
-        id = blog.author.id
+        id=blog.author.id
     )
     
     data['author'] = UserSerializer(
         instance=author,
         many=False
     ).data
-    
-    # get number of likes of that blog
-    num_like = BlogLike.objects.filter(
-        blog=blog
-    ).count()
-    data['likes'] = num_like
     
     return data
 
