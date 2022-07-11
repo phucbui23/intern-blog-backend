@@ -1,6 +1,5 @@
 from attachment.serializers import AttachmentSerializer
 from rest_framework import serializers
-from tag.serializers import BlogTagSerializer, TagSerializer
 
 from attachment.models import Attachment
 from attachment.serializers import AttachmentSerializer
