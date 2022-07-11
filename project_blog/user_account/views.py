@@ -23,7 +23,6 @@ from .serializers import FollowerSerializer, UserSerializer
 @json_response
 def get_user_info(request):
     validate_token(token=request.auth)
-    print(request.user)
     user = User.objects.get(email=request.user.email)
     
     blog =  Blog.objects.filter(author=user, is_published=True)
