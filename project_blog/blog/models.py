@@ -87,7 +87,6 @@ class Blog(models.Model):
         return super().save(*args, **kwargs)
    
         
-
 class BlogAttachment(models.Model):
     blog = models.ForeignKey(
         to=Blog, 

@@ -125,6 +125,7 @@ def get_blogs_by_tag(request):
         ).filter(
             blogtag_fk_blog__tag=tag
         )
+        
     else:
         blogs = Blog.objects.all().order_by('-created_at')
     
@@ -193,11 +194,29 @@ def get_blogs(request):
     # #     instance={'data' : paginator}, 
     # #     many=True,
     # # ).data
-
-    return BlogSerializer(
-        query_blogs,
-        many=True,
-    ).data
+    
+    data = BlogSerializer(
+            query_blogs,
+            many=True,
+        ).data
+    
+    for query_blog in query_blogs:
+        blog_attachments = BlogAttachment.objects.filter(
+            blog=query_blog,
+        )
+        
+        blog_attachments_uid = blog_attachments.values_list(
+            'attachment__uid',
+            flat=True,
+        )
+        
+        author = User.objects.get(
+            id=query_blog.author.id
+        )
+        
+        # print(UserSerializer(author).data)
+    
+    return data
 
 
 @api_view(['POST'])
@@ -211,18 +230,6 @@ def get_blog_detail(request):
         raise ValidationError(BLOG_NOT_EXIST)
     
     data = BlogSerializer(blog).data
-        
-    # join tables to get tag
-    tags = Tag.objects.prefetch_related(
-        'blogtag_fk_tag'
-    ).filter(
-        blogtag_fk_tag__blog=blog
-    )
-    
-    data['tags'] = TagSerializer(
-        instance=tags,
-        many=True
-    ).data
     
     # get attachments in a blog
     attachments = Attachment.objects.prefetch_related(
@@ -238,19 +245,13 @@ def get_blog_detail(request):
     
     # get author detail
     author = User.objects.get(
-        id = blog.author.id
+        id=blog.author.id
     )
     
     data['author'] = UserSerializer(
         instance=author,
         many=False
     ).data
-    
-    # get number of likes of that blog
-    num_like = BlogLike.objects.filter(
-        blog=blog
-    ).count()
-    data['likes'] = num_like
     
     return data
 
