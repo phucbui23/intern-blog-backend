@@ -31,22 +31,28 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class FollowerSerializer(serializers.ModelSerializer):
+
+    total_blog = serializers.IntegerField(read_only=True)
+    author = UserSerializer(read_only=True)
+    follow_by = BlogSerializer(read_only=True)
+    most_liked_blog = BlogSerializer(read_only=True)
+
     class Meta:
         model = Follower
-        fields = ('author', 'follower', 'follow_by','active')
+        fields = ('author', 'follow_by','active', 'total_blog', 'most_liked_blog',)
         read_only_fields = fields
     
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        author = User.objects.get(pk=instance.author_id)
-        follower = User.objects.get(pk=instance.follower_id)
+    # def to_representation(self, instance):
+    #     data = super().to_representation(instance)
+    #     # author = User.objects.get(pk=instance.author_id)
+    #     # follower = User.objects.get(pk=instance.follower_id)
 
-        if instance.follow_by_id:
-            follow_by = Blog.objects.get(pk=instance.follow_by_id)
-            data['follow_by'] = BlogSerializer(instance=follow_by, many=False).data
+    #     if instance.follow_by_id:
+    #         follow_by = Blog.objects.get(pk=instance.follow_by_id)
+    #         data['follow_by'] = BlogSerializer(instance=follow_by, many=False).data
 
-        data['author'] = UserSerializer(instance=author, many=False).data
-        data['follower'] = UserSerializer(instance=follower, many=False).data
+    #     # data['author'] = UserSerializer(instance=author, many=False).data
+    #     # data['follower'] = UserSerializer(instance=follower, many=False).data
         
-        return data
+    #     return data
         

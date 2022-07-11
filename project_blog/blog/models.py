@@ -1,12 +1,12 @@
 import uuid
+
+from attachment.models import Attachment
 from django.db import models
 from django.forms import ValidationError
+from user_account.models import Follower, User
+from utils.messages import (BLOG_NOT_EXIST, MAX_LENGTH_BLOG_CONTENT,
+                            MAX_LENGTH_BLOG_NAME)
 
-from user_account.models import User
-from attachment.models import Attachment
-from utils.messages import (
-    BLOG_NOT_EXIST, MAX_LENGTH_BLOG_NAME, MAX_LENGTH_BLOG_CONTENT
-)
 
 class Blog(models.Model):
     uid = models.UUIDField(
@@ -27,7 +27,7 @@ class Blog(models.Model):
         to=User, 
         on_delete=models.CASCADE,
         to_field='id',
-        related_name='blog_fk_auhor',
+        related_name='blog_fk_author',
         db_column='author_id',
         db_constraint=False,
         null=False,
@@ -65,7 +65,17 @@ class Blog(models.Model):
             return Blog.objects.get(uid=uid)
         except Blog.DoesNotExist:
             raise ValidationError(BLOG_NOT_EXIST)
-        
+    
+    @staticmethod
+    def get_total_blog_by_user(author:User, *args, **kwargs):
+        try:
+            return Blog.objects.filter(
+                author=author,
+                is_published=True,
+            ).count()
+        except Blog.DoesNotExist:
+            raise ValidationError(BLOG_NOT_EXIST)
+
     def is_valid(self):
         if (len(self.name) > 255):
             raise ValidationError(MAX_LENGTH_BLOG_NAME)
@@ -199,7 +209,6 @@ class BlogHistory(models.Model):
             ('blog', 'revision',),
         )
 
-
 class BlogLike(models.Model):
     author = models.ForeignKey(
         to=User,
@@ -238,6 +247,18 @@ class BlogLike(models.Model):
         blank=True,
     )
     
+    @staticmethod
+    def get_most_liked_blog(author:User):
+        return Blog.objects.filter(
+            author=author
+        ).prefetch_related(
+            'bloglike_fk_blog'
+        ).annotate(
+            like=models.Count('bloglike_fk_blog')
+        ).order_by(
+            '-like'
+        ).first()
+
     class Meta:
         unique_together = (
             ('author', 'blog',),

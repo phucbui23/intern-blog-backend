@@ -1,30 +1,21 @@
-from django.core.paginator import Paginator
-from django.db.models import Q, Prefetch
-from django.db.models import Max
-from django.forms import ValidationError
-from rest_framework import filters
-from rest_framework.decorators import api_view
-
 from attachment.models import Attachment
 from attachment.serializers import AttachmentSerializer
+
+from django.db.models import Prefetch, Q
+from django.forms import ValidationError
+from rest_framework.decorators import api_view
+
 from notification.models import Notification
 from tag.models import BlogTag, Tag
 from user_account.models import User
 from user_account.serializers import UserSerializer
 from utils.api_decorator import json_response, paginator
-from utils.messages import *
+from utils.validate_token import validate_token
 from utils.enums import Notification_type
+from utils.messages import *
 
-from .models import (
-    Blog, 
-    BlogAttachment, 
-    BlogHistory, 
-    BlogLike
-)
-from .serializers import (
-    BlogLikeSerializer,
-    BlogSerializer
-)
+from .models import Blog, BlogAttachment, BlogHistory, BlogLike
+from .serializers import BlogLikeSerializer, BlogSerializer
 
 
 @api_view(['POST'])
