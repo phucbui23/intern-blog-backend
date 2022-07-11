@@ -17,6 +17,7 @@ class UserManager(BaseUserManager):
         user = self.model(
             email=email,
         )
+        user.username = email.split('@')[0]
         user.set_password(password)
         user.is_superuser = False
         user.is_admin = False
