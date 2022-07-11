@@ -5,6 +5,7 @@ from rest_framework.decorators import api_view
 from user_account.models import User
 # Create your views here.
 from utils.api_decorator import json_response
+from utils.messages import USER_NOT_FOUND
 
 from .models import Attachment
 from .serializers import AttachmentSerializer
@@ -22,9 +23,7 @@ def create_attachment(request):
             username=username,
         )
     except User.DoesNotExist:
-        raise ValidationError(
-            message='User doesn\'t exits',
-        )
+        raise ValidationError(USER_NOT_FOUND)
         
     new_attachment = Attachment.objects.create(
         **data,

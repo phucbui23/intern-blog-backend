@@ -1,11 +1,11 @@
+from blog.models import Blog
 from django.forms import ValidationError
 from rest_framework.decorators import api_view
-
-from utils.api_decorator import json_response
 from user_account.models import User
-from blog.models import Blog
+from utils.api_decorator import json_response
+from utils.messages import USER_NOT_FOUND
 
-from .models import Tag, BlogTag
+from .models import BlogTag, Tag
 from .serializers import BlogTagSerializer, TagSerializer
 
 
@@ -21,9 +21,7 @@ def create_tag(request):
             username=username,
         )
     except User.DoesNotExist:
-        raise ValidationError(
-            message="User doesn't exist"
-        )
+        raise ValidationError(USER_NOT_FOUND)
         
     new_tag = Tag.objects.create(
         **data,

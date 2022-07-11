@@ -24,7 +24,7 @@ class Blog(models.Model):
         to=User, 
         on_delete=models.CASCADE,
         to_field='id',
-        related_name='blog_fk_author',
+        related_name='blog_fk_auhor',
         db_column='author_id',
         db_constraint=False,
         null=False,
@@ -55,6 +55,9 @@ class Blog(models.Model):
         null=True,
         blank=True,
     )
+
+    def __str__(self) -> str:
+        return self.name
 
 class BlogAttachment(models.Model):
     blog = models.ForeignKey(

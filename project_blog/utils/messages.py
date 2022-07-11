@@ -26,3 +26,5 @@ EMPTY_BLOG_STATUS = "Blog status must not be empty"
 MAX_LENGTH_BLOG_NAME = "Name of blog is only maximum 255 chars"
 MAX_LENGTH_BLOG_CONTENT = "Content of blog is only maximum 255 chars"
 MAX_LENGTH_TAG_NAME = "Name of tag is only maximum 255 chars"
+
+USER_NOT_FOUND = "User not found"

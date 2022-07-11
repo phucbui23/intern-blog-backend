@@ -9,22 +9,20 @@ from utils.constant import DEFAULT_ITEMS_PER_PAGE
 def paginator(func):
     def wrapper(*args, **kwargs):
         data = func(*args, **kwargs)
-        p = Paginator(
+        _paginator = Paginator(
             object_list=data,
             per_page=DEFAULT_ITEMS_PER_PAGE,            
         )
         page = args[0].GET.get('page')
-        page_objects = p.get_page(page)
+        page_objects = _paginator.get_page(page)
 
-        d = {
-            'blog_objects': page_objects.object_list,
-            'total_blogs': p.count,
-            'total_pages': page_objects.paginator.num_pages,
-            'current': page_objects.number,
-            'has_next': page_objects.has_next(),
-            'has_prev': page_objects.has_previous()
+        return_data = {
+            'objects': page_objects.object_list,
+            'total_record': _paginator.count,
+            'total_page': page_objects.paginator.num_pages,
+            'current_page': page_objects.number,
         }
-        return d
+        return return_data
         
     return wrapper
 

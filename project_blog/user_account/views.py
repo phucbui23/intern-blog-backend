@@ -1,22 +1,22 @@
 from datetime import datetime
+
 from django.contrib.auth import password_validation
 from django.core.validators import validate_email
 from rest_framework.decorators import api_view
-from rest_framework.exceptions import ValidationError,NotFound
-
-from utils.api_decorator import json_response
-from utils.send_email import send_email
+from rest_framework.exceptions import NotFound, ValidationError
+from utils.api_decorator import json_response, paginator
 from utils.enums import Type
+from utils.messages import (EMPTY_EMAIL_FIELDS, EMPTY_FIELDS,
+                            EMPTY_FULLNAME_FIELDS, EXIST_USER,
+                            MAX_LENGTH_EMAIL, MAX_LENGTH_FULLNAME,
+                            MAX_LENGTH_NICK_NAME, MAX_LENGTH_PASSWORD,
+                            MAX_LENGTH_PHONE_NUMBER, NOT_SAME_PASSWORD,
+                            USER_NOT_FOUND, WRONG_PASSWORD)
+from utils.send_email import send_email
 from utils.validate_token import validate_token
-from utils.messages import (
-    MAX_LENGTH_PHONE_NUMBER, MAX_LENGTH_EMAIL, MAX_LENGTH_FULLNAME, MAX_LENGTH_NICK_NAME,
-    MAX_LENGTH_PASSWORD, EXIST_USER, EMPTY_FIELDS,
-    EMPTY_EMAIL_FIELDS, EMPTY_FULLNAME_FIELDS, 
-    WRONG_PASSWORD, NOT_SAME_PASSWORD)
 
-from .models import User
-from .serializers import UserSerializer
-
+from .models import Follower, User
+from .serializers import FollowerSerializer, UserSerializer
 
 
 @api_view(['POST'])
@@ -138,3 +138,25 @@ def change_password(request):
         many=False
     ).data
     
+
+@api_view(['GET'])
+@json_response
+@paginator
+def get_user_followers(request):
+    data = request.data.copy()
+    user = data.pop('author', None)
+
+    try:
+        all_followers = Follower.objects.select_related(
+            'author'
+        ).filter(
+            author__exact=user
+        ).order_by('-updated_at')
+    except User.DoesNotExist:
+        raise NotFound(USER_NOT_FOUND)
+    else:
+        print(all_followers)
+        return FollowerSerializer(
+            instance=all_followers,
+            many=True,
+        ).data
