@@ -1,5 +1,5 @@
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.db.models import Max
 from django.forms import ValidationError
 from rest_framework import filters
@@ -25,6 +25,81 @@ from .serializers import (
     BlogLikeSerializer,
     BlogSerializer
 )
+
+
+@api_view(['POST'])
+@json_response
+@paginator
+def get_matrix_blogs(request):
+    search = request.POST.get("search", None)
+    uid = request.POST.get("uid", None)
+
+    blog_records = Blog.objects.all()
+
+    if search is not None:
+        blog_records = blog_records.select_related(
+            'author'
+        ).filter(
+            Q(author__username=search) |
+            Q(uid__icontains=search) |
+            Q(name__icontains=search) |
+            Q(content__icontains=search)
+        )
+
+    if not (uid is None):
+        blog_records = blog_records.filter(
+            uid=uid
+        )
+
+    blog_records = blog_records.prefetch_related(
+        Prefetch(
+            'blogtag_fk_blog',
+            to_attr='tags'
+        ),
+        Prefetch(
+            'blogattachment_fk_blog',
+            to_attr='attachment'
+        )
+    )
+
+
+    # data = request.data.dict().copy()
+    # query_blogs_uid = data.pop('uid', None)
+    # query_blogs_title = data.pop('name', None)
+    # query_blogs_content = data.pop('content', None)
+
+    # if query_blogs_uid:
+    #     return BlogSerializer( 
+    #         Blog.objects.get(uid=query_blogs_uid),
+    #         many=False
+    #     ).data
+
+    # if query_blogs_title and query_blogs_content:
+    #     query_blogs = Blog.objects.filter(
+    #         name__icontains=query_blogs_title,
+    #         content__icontains=query_blogs_content,
+    #     )
+
+    # elif query_blogs_title:
+    #     query_blogs = Blog.objects.filter(
+    #         name__icontains=query_blogs_title,
+    #     )
+
+    # elif query_blogs_content:
+    #     query_blogs = Blog.objects.filter(
+    #         content__icontains=query_blogs_content,
+    #     )
+
+    # # return BlogSerializer(
+    # #     instance={'data' : paginator}, 
+    # #     many=True,
+    # # ).data
+
+    return BlogSerializer(
+        blog_records,
+        many=True,
+    ).data
+
 
 @api_view(['POST'])
 @json_response
@@ -135,69 +210,6 @@ def get_blogs_by_tag(request):
         many=True
     ).data
 
-
-@api_view(['POST'])
-@json_response
-@paginator
-def get_blogs(request):
-    query_data = request.POST.get("keyword", '')
-
-    if query_data is not '':
-        query_blogs = Blog.objects.select_related(
-            'author'
-        ).filter(
-            Q(author__username=query_data) |
-            Q(uid__icontains=query_data) |
-            Q(name__icontains=query_data) |
-            Q(content__icontains=query_data)
-        )
-
-        query_blogs.order_by('-updated_at')
-
-    else:
-        query_blogs = Blog.objects.all().order_by('-created_at')
-
-    # data = request.data.dict().copy()
-    # query_blogs_uid = data.pop('uid', None)
-    # query_blogs_title = data.pop('name', None)
-    # query_blogs_content = data.pop('content', None)
-
-    # if query_blogs_uid:
-    #     return BlogSerializer( 
-    #         Blog.objects.get(uid=query_blogs_uid),
-    #         many=False
-    #     ).data
-
-    # if query_blogs_title and query_blogs_content:
-    #     query_blogs = Blog.objects.filter(
-    #         name__icontains=query_blogs_title,
-    #         content__icontains=query_blogs_content,
-    #     )
-
-    # elif query_blogs_title:
-    #     query_blogs = Blog.objects.filter(
-    #         name__icontains=query_blogs_title,
-    #     )
-
-    # elif query_blogs_content:
-    #     query_blogs = Blog.objects.filter(
-    #         content__icontains=query_blogs_content,
-    #     )
-
-    # # paginator = Paginator(
-    # #     object_list=query_blogs, 
-    # #     per_page=3,
-    # # )
-
-    # # return BlogSerializer(
-    # #     instance={'data' : paginator}, 
-    # #     many=True,
-    # # ).data
-
-    return BlogSerializer(
-        query_blogs,
-        many=True,
-    ).data
 
 
 @api_view(['POST'])
