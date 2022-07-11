@@ -177,4 +177,4 @@ class Follower(models.Model):
     )
 
     def __str__(self) -> str:
-        return self.follower.email
+        return f"{self.author.email} - {self.follower.email}"

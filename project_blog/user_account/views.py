@@ -1,21 +1,20 @@
 from datetime import datetime
+
+from blog.models import Blog, BlogLike
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, ValidationError
 from utils.api_decorator import json_response, paginator
 from utils.enums import Type
+from utils.messages import (ACCOUNT_ACTIVE, ACCOUNT_NOT_ACTIVE, NOT_FOUND_BLOG,
+                            NOT_FOUND_USER, NOT_SAME_PASSWORD, WRONG_PASSWORD)
 from utils.send_email import send_email
-from utils.validate_input import (
-    validate_email, validate_password,
-    validate_fullname, validate_nickname, validate_phone_number)
-from utils.messages import (
-    WRONG_PASSWORD, NOT_SAME_PASSWORD, NOT_FOUND_BLOG, 
-    NOT_FOUND_USER, ACCOUNT_ACTIVE, ACCOUNT_NOT_ACTIVE
-    )
-from blog.models import Blog, BlogLike
+from utils.validate_input import (validate_email, validate_fullname,
+                                  validate_nickname, validate_password,
+                                  validate_phone_number)
+from utils.validate_token import validate_token
 
-from .models import User, Follower
+from .models import Follower, User
 from .serializers import FollowerSerializer, UserSerializer
-
 
 
 @api_view()
@@ -201,3 +200,39 @@ def follow_user(request):
         instance=data,
         many=False,
     ).data
+
+@api_view(['GET'])
+@json_response
+@paginator
+def get_user_following(request):
+
+    author=request.user
+
+    # set of users that author follows
+    following = Follower.objects.filter(
+        follower=author,
+        active=True,
+        follow_by=None,
+    )
+
+    try:
+        for follow in following:
+            follower = follow.author
+            total_blog = Blog.get_total_blog_by_user(follower)
+            most_liked_blog = BlogLike.get_most_liked_blog(follower)
+            # like = most_liked_blog.count()
+
+            setattr(follow, 'total_blog', total_blog)
+            setattr(follow, 'most_liked_blog', most_liked_blog)
+
+    except Exception as e:
+        print(e)
+
+    data = FollowerSerializer(
+        instance=following,
+        many=True,
+    ).data
+
+    return data
+
+    

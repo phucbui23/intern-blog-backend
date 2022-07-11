@@ -9,4 +9,5 @@ urlpatterns = [
     path('change_password', views.change_password),
     path('follower/', views.follow_user),
     path('follower/blog', views.follow_by_blog),
+    path('following/', views.get_user_following)
 ]
