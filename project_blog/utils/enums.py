@@ -24,3 +24,8 @@ class Type(models.TextChoices):
 class Attachment_type(models.TextChoices):
     AVATAR = 'AVATAR'
     COVER = 'BLOG_COVER'
+    
+@unique
+class Notification_type(models.TextChoices):
+    BLOG_LIKED = 'BLOG_LIKED'
+    FOLLOWER_NEW_POST = 'FOLLOWER_NEW_POST'

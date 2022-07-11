@@ -15,9 +15,18 @@ from .models import (
 )
 
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'phone_number',
+                  'full_name', 'nick_name', 'quote','avatar')
+        read_only_fields = fields
+
+
 class BlogSerializer(serializers.ModelSerializer):
     tags = TagSerializer(read_only=True, many=True)
     attachment = AttachmentSerializer(read_only=True, many=False)
+    author = UserSerializer(read_only=True, many=False)
 
     class Meta:
         model = Blog

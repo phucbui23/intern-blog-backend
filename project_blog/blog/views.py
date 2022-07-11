@@ -7,13 +7,14 @@ from rest_framework.decorators import api_view
 
 from attachment.models import Attachment
 from attachment.serializers import AttachmentSerializer
+from notification.models import Notification
 from tag.models import BlogTag, Tag
-from tag.serializers import TagSerializer
 from user_account.models import User
 from user_account.serializers import UserSerializer
 from utils.validate_token import validate_token
 from utils.api_decorator import json_response, paginator
 from utils.messages import *
+from utils.enums import Notification_type
 
 from .models import (
     Blog, 
@@ -104,7 +105,7 @@ def get_matrix_blogs(request):
 @api_view(['POST'])
 @json_response
 def create_blog(request):
-    validate_token(request.auth)
+    # validate_token(request.auth)
     user = request.user
     data = request.data.copy()
     
@@ -162,7 +163,7 @@ def create_blog(request):
             new_blog_attachments.append(
                 BlogAttachment(
                     blog=new_blog,
-                    tag=new_attachment,
+                    attachment=new_attachment,
                 )
             )
                 
@@ -170,6 +171,15 @@ def create_blog(request):
             objs=new_blog_attachments,
             ignore_conflicts=True
         )
+        
+    print(new_blog.uid)
+    
+    new_noti = Notification.objects.create(
+        type=Notification_type.FOLLOWER_NEW_POST,
+        author=user,
+        subject='Follower\'s new post',
+        content=new_blog.uid,
+    )
     
     return BlogSerializer(
         instance=new_blog, 
@@ -275,21 +285,6 @@ def get_blogs(request):
             many=True,
         ).data
     
-    for query_blog in query_blogs:
-        blog_attachments = BlogAttachment.objects.filter(
-            blog=query_blog,
-        )
-        
-        blog_attachments_uid = blog_attachments.values_list(
-            'attachment__uid',
-            flat=True,
-        )
-        
-        author = User.objects.get(
-            id=query_blog.author.id
-        )
-        
-        # print(UserSerializer(author).data)
     
     return data
 
@@ -466,6 +461,13 @@ def create_blog_like(request):
         instance=user,
         many=False
     ).data
+    
+    new_noti = Notification.objects.create(
+        type=Notification_type.BLOG_LIKED,
+        author=user,
+        subject='Blog is liked',
+        content=blog.uid,
+    )
     
     return data
 
