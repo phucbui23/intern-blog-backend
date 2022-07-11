@@ -153,7 +153,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'trumbb301@gmail.com'
 EMAIL_HOST_PASSWORD = 'ttfohmbshqtxfijn'
-DOMAIN = 'http://192.168.30.143:8000'
+DOMAIN = 'http://localhost:3000'
 
 
 SIMPLE_JWT = {

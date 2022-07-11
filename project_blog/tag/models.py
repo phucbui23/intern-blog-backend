@@ -1,22 +1,11 @@
 from django.db import models
 
-from user_account.models import User
 from blog.models import Blog
 
 
 class Tag(models.Model):
     name = models.TextField(
         max_length=255,
-        null=False,
-        blank=False,
-    )
-    author = models.ForeignKey(
-        to=User, 
-        on_delete=models.CASCADE,
-        to_field='id',
-        related_name='tag_fk_author',
-        db_column='author_id',
-        db_constraint=False,
         null=False,
         blank=False,
     )
@@ -38,11 +27,11 @@ class Tag(models.Model):
     )
     
     @staticmethod
-    def get_tag_by_name(_name):
+    def get_tag_by_name(name):
         try:        
-            tag = Tag.objects.get(name=_name) # get tag by name
+            tag = Tag.objects.get(name=name)
         except Tag.DoesNotExist:
-            tag = None # if tag not exist return None
+            tag = None
         return tag
     
     def __str__(self) -> str:

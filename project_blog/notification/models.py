@@ -1,16 +1,37 @@
 from django.db import models
+
 from user_account.models import User
-# Create your models here.
+
+
 class Notification(models.Model):
-    type = models.TextField()
-    subject = models.TextField()
-    content = models.TextField()
-    is_success = models.BooleanField()
+    type = models.TextField(
+        null=False,
+        blank=False,
+    )
+    
+    subject = models.TextField(
+        null=False,
+        blank=False,
+    )
+    
+    content = models.TextField(
+        null=False,
+        blank=False,
+    )
+    
+    is_success = models.BooleanField(
+        default=False,
+        null=False,
+        blank=False,
+    )
+    
     sended_at = models.DateTimeField(
         auto_now=True, 
+        auto_now_add=False,
         null=True, 
         blank=True,
     )
+    
     author = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE,
@@ -21,4 +42,9 @@ class Notification(models.Model):
         null=False,
         blank=False,
     )
-    is_seen = models.BooleanField()
+    
+    is_seen = models.BooleanField(
+        default=False,
+        null=False,
+        blank=False,
+    )

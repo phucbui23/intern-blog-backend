@@ -1,7 +1,4 @@
 from datetime import datetime
-
-from django.contrib.auth import password_validation
-from django.core.validators import validate_email
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, ValidationError
 from utils.api_decorator import json_response, paginator
@@ -14,9 +11,46 @@ from utils.messages import (EMPTY_EMAIL_FIELDS, EMPTY_FIELDS,
                             USER_NOT_FOUND, WRONG_PASSWORD)
 from utils.send_email import send_email
 from utils.validate_token import validate_token
+from utils.validate_input import (
+    validate_email, validate_password,
+    validate_fullname, validate_nickname, validate_phone_number)
+from utils.messages import (
+    WRONG_PASSWORD, NOT_SAME_PASSWORD, NOT_FOUND_BLOG, 
+    NOT_FOUND_USER, ACCOUNT_ACTIVE, ACCOUNT_NOT_ACTIVE
+    )
+from blog.models import Blog, BlogLike
+
+from .models import User, Follower
+from .serializers import FollowerSerializer, UserSerializer
+
 
 from .models import Follower, User
 from .serializers import FollowerSerializer, UserSerializer
+
+@api_view()
+@json_response
+def get_user_info(request):
+    validate_token(token=request.auth)
+    user = User.objects.get(email=request.user.email)
+    
+    blog =  Blog.objects.filter(author=user, is_published=True)
+    blog_num = blog.count()
+    like_num = 0
+    for each_blog in blog:
+        like_num += BlogLike.objects.filter(blog=each_blog).count()
+        
+    follow_num = Follower.objects.filter(author=user, active=True).count()
+
+    data = UserSerializer(
+        instance=user,
+        many=False,
+    ).data
+
+    data['blog_numbers'] = blog_num
+    data['like_numbers'] = like_num
+    data['follow_numbers'] = follow_num
+
+    return data
 
 
 @api_view(['POST'])
@@ -26,51 +60,38 @@ def sign_up(request):
     fullname = request.POST.get('full_name', None)
     nickname = request.POST.get('nick_name', fullname)
 
-    if (not email):
-        raise ValidationError(EMPTY_EMAIL_FIELDS)
-    if (not fullname):
-        raise ValidationError(EMPTY_FULLNAME_FIELDS)
-
-    if (len(email) > 255):
-        raise ValidationError(MAX_LENGTH_EMAIL)
-    
-    if (len(fullname) > 255):
-        raise ValidationError(MAX_LENGTH_FULLNAME)
-    
-    if (len(nickname) > 255):
-        raise ValidationError(MAX_LENGTH_NICK_NAME)
-
-    validate_email(email)
+    validate_email(email=email)
+    validate_fullname(full_name=fullname)
+    validate_nickname(nick_name=nickname)
 
     try:
-        User.get_user(email=email)
-        is_has_user = True
+        exist_user = User.get_user(email=email)
+        if (exist_user.active):
+            raise Exception(ACCOUNT_ACTIVE)
+        else:
+            raise Exception(ACCOUNT_NOT_ACTIVE)
     except NotFound:
-        is_has_user = False
 
-    if (is_has_user):
-        raise ValidationError(EXIST_USER)
+        username = email.split('@')[0]
+        user = User.objects.create( 
+            email=email, 
+            username=username,
+            full_name=fullname,
+            nick_name=nickname,
+            active=False,
+            is_superuser=False,
+            is_admin=False,
+        )
+        
+        send_email(
+            user=user, 
+            type_email=Type.ACTIVATE,
+        )
 
-    username = email.split('@')[0]
-    user = User.objects.create( 
-        email=email, 
-        username=username,
-        full_name=fullname,
-        nick_name=nickname,
-        active=False,
-        is_superuser=False,
-        is_admin=False,
-    )
-    
-    send_email(
-        user=user, 
-        type_email=Type.ACTIVATE,
-    )
-
-    return UserSerializer(
-        instance=user,
-        many=False,
-    ).data
+        return UserSerializer(
+            instance=user,
+            many=False,
+        ).data
 
 
 @api_view(['PUT'])
@@ -84,15 +105,9 @@ def edit_profile(request):
     full_name = request.POST.get('full_name', user.full_name)
     nick_name = request.POST.get('nick_name', user.nick_name)
     
-    if (phone_number and len(phone_number) > 16):
-        raise ValidationError(MAX_LENGTH_PHONE_NUMBER)
-    
-    if (full_name and len(full_name) > 255):
-        raise ValidationError(MAX_LENGTH_FULLNAME)
-    
-    if (nick_name and len(nick_name) > 255):
-        raise ValidationError(MAX_LENGTH_NICK_NAME)
-    
+    validate_phone_number(phone_number=phone_number)
+    validate_fullname(full_name=full_name)
+    validate_nickname(nick_name=nick_name)
     
     user.phone_number = phone_number
     user.full_name = full_name
@@ -111,23 +126,20 @@ def edit_profile(request):
 @api_view(['PUT'])
 @json_response
 def change_password(request):
+    validate_token(request.auth)
+
     user = request.user
     current_password = request.POST.get('current_password', None)
     new_password = request.POST.get('new_password', None)
-    validate_password = request.POST.get('validate_password', None)
+    new_password_again = request.POST.get('new_password_again', None)
 
-    password_validation.validate_password(new_password)
+    validate_password(current_password)
+    validate_password(new_password)
 
-    if not current_password or not new_password or not validate_password:
-        raise ValidationError(EMPTY_FIELDS)
-    
     if not user.check_password(current_password):
         raise ValidationError(WRONG_PASSWORD)
     
-    if (len(new_password) > 255):
-        raise ValidationError(MAX_LENGTH_PASSWORD)
-
-    if new_password != validate_password:
+    if new_password != new_password_again:
         raise ValidationError(NOT_SAME_PASSWORD)
     
     user.set_password(new_password)
@@ -139,24 +151,71 @@ def change_password(request):
     ).data
     
 
-@api_view(['GET'])
+@api_view(['PUT'])
 @json_response
-@paginator
-def get_user_followers(request):
-    data = request.data.copy()
-    user = data.pop('author', None)
+def follow_by_blog(request):
+    validate_token(request.auth)
 
     try:
-        all_followers = Follower.objects.select_related(
-            'author'
-        ).filter(
-            author__exact=user
-        ).order_by('-updated_at')
+        uid_blog = request.POST.get('blog_uid')
+        blog = Blog.objects.get(uid=uid_blog)
+    except Blog.DoesNotExist:
+        raise NotFound(NOT_FOUND_BLOG)
+    
+    blog_author = blog.author
+
+    try:
+        data = Follower.objects.get(
+            author=blog_author,
+            follower=request.user,
+            follow_by=blog,
+        )
+
+        data.active = not data.active
+        data.save()
+
+    except Follower.DoesNotExist:
+        data = Follower.objects.create(
+            author=blog_author,
+            follower=request.user,
+            follow_by=blog,
+            active=True,
+        )
+
+    return FollowerSerializer(
+        instance=data,
+        many=False,
+    ).data
+
+
+@api_view(['PUT'])
+@json_response
+def follow_user(request):
+    validate_token(request.auth)
+
+    try:
+        author_email = request.POST.get('email')
+        author = User.get_user(email=author_email)
     except User.DoesNotExist:
-        raise NotFound(USER_NOT_FOUND)
-    else:
-        print(all_followers)
-        return FollowerSerializer(
-            instance=all_followers,
-            many=True,
-        ).data
+        raise NotFound(NOT_FOUND_USER)
+    
+    try:
+        data = Follower.objects.get(
+            author=author,
+            follower=request.user,
+        )
+
+        data.active = not data.active
+        data.save()
+
+    except Follower.DoesNotExist:
+        data = Follower.objects.create(
+            author=author,
+            follower=request.user,
+            active=True,
+        )
+
+    return FollowerSerializer(
+        instance=data,
+        many=False,
+    ).data

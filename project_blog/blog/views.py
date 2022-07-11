@@ -1,5 +1,6 @@
 from django.core.paginator import Paginator
 from django.db.models import Q, Prefetch
+from django.db.models import Max
 from django.forms import ValidationError
 from rest_framework import filters
 from rest_framework.decorators import api_view
@@ -7,17 +8,12 @@ from rest_framework.decorators import api_view
 from attachment.models import Attachment
 from attachment.serializers import AttachmentSerializer
 from tag.models import BlogTag, Tag
-from tag.serializers import BlogTagSerializer, TagSerializer
+from tag.serializers import TagSerializer
 from user_account.models import User
 from user_account.serializers import UserSerializer
+from utils.validate_token import validate_token
 from utils.api_decorator import json_response, paginator
-from utils.api_decorator import json_response
-from utils.messages import (
-    EMPTY_BLOG_STATUS, EMPTY_NAME_BLOG,
-    TAG_NOT_EXIST, BLOG_NOT_EXIST,
-    MAX_LENGTH_BLOG_NAME, MAX_LENGTH_BLOG_CONTENT,
-    MAX_LENGTH_TAG_NAME,
-)
+from utils.messages import *
 
 from .models import (
     Blog, 
@@ -26,7 +22,6 @@ from .models import (
     BlogLike
 )
 from .serializers import (
-    BlogHistorySerializer, 
     BlogLikeSerializer,
     BlogSerializer
 )
@@ -109,6 +104,8 @@ def get_matrix_blogs(request):
 @api_view(['POST'])
 @json_response
 def create_blog(request):
+    validate_token(request.auth)
+    user = request.user
     data = request.data.copy()
     
     name = data.pop('name', None)
@@ -122,94 +119,89 @@ def create_blog(request):
     
     if (len(name) > 255):
         raise ValidationError(MAX_LENGTH_BLOG_NAME)
-    if (len(content) > 255):
+    if content and (len(content) > 255):
         raise ValidationError(MAX_LENGTH_BLOG_CONTENT)
     
-    # user = request.user
-    _user = data.pop('author', None)
-    user = User.objects.get(username=_user)
-    
-    tags = data.pop('tag', None)
-    attachments = data.pop('attachment', None)
+    tags_name = data.pop('tags', [])
+    attachments_uid = data.pop('attachments', [])
     
     new_blog = Blog.objects.create(
         **data,
         name=name,
-        content=content,
+        content=content if (content) else None,
         author=user,
         is_published=is_published,
     )
     
-    data = BlogSerializer(
+    # xu ly tags
+    if (len(tags_name) > 0):
+        new_blog_tags = []
+        
+        for tag_name in tags_name:
+            new_tag, created = Tag.objects.get_or_create(name=tag_name)
+                
+            new_blog_tags.append(
+                BlogTag(
+                    blog=new_blog,
+                    tag=new_tag,
+                )
+            )
+                
+        BlogTag.objects.bulk_create(
+            objs=new_blog_tags,
+            ignore_conflicts=True
+        )
+        
+    # xu ly attachments
+    if (len(attachments_uid) > 0):
+        new_blog_attachments = []
+        
+        for attachment_uid in attachments_uid:
+            new_attachment = Attachment.objects.get(uid=attachment_uid)
+                
+            new_blog_attachments.append(
+                BlogAttachment(
+                    blog=new_blog,
+                    tag=new_attachment,
+                )
+            )
+                
+        BlogAttachment.objects.bulk_create(
+            objs=new_blog_attachments,
+            ignore_conflicts=True
+        )
+    
+    return BlogSerializer(
         instance=new_blog, 
         many=False,
     ).data
-    
-    # create tag or add tag to blog if exist
-    if tags is not None:
-        for tag in tags:
-            
-            tag_name = tag.pop("name")
-            if (len(tag_name) > 255):
-                raise ValidationError(MAX_LENGTH_TAG_NAME)
-        
-            _tag = Tag.get_tag_by_name(tag_name)
-            
-            # if tag not exist, create tag
-            if _tag is None:
-                _tag = Tag.objects.create(
-                    author=user,
-                    name=tag_name,
-                )
-                
-            blogtag = BlogTag.get_blog_tag(new_blog, _tag)
-            
-            # create blogtag for every tag if not exist
-            if blogtag is None:
-                blogtag = BlogTag.objects.create(
-                    blog=new_blog,
-                    tag=_tag,
-                )
-    
-    # add attachment to the blog
-    if attachments is not None:
-        for attachment in attachments:
-            attachment_uid = attachment.pop("uid")
-            
-            new_attachment = Attachment.get_attachment(
-                attachment_uid
-            )
-            
-            blog_attachment = BlogAttachment.objects.create(
-                blog=new_blog,
-                attachment=new_attachment,
-            )
-    
-    return data
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @json_response
 @paginator
 def get_blogs_by_tag(request):
-    tag_name = request.GET.get('tag', None)
+    tag_name = request.POST.get('tag', '')
     
-    if (len(tag_name) > 255):
-        raise ValidationError(MAX_LENGTH_TAG_NAME)
-    
-    # check if tag exist
-    try:
-        tag = Tag.objects.get(
-            name=tag_name,
+    if (tag_name != ''):
+        if (len(tag_name) > 255):
+            raise ValidationError(MAX_LENGTH_TAG_NAME)
+        
+        # check if tag exist
+        try:
+            tag = Tag.objects.get(
+                name=tag_name,
+            )
+        except Tag.DoesNotExist:
+            raise ValidationError(TAG_NOT_EXIST)
+        
+        blogs = Blog.objects.prefetch_related(
+            'blogtag_fk_blog'
+        ).filter(
+            blogtag_fk_blog__tag=tag
         )
-    except Tag.DoesNotExist:
-        raise ValidationError(TAG_NOT_EXIST)
-    
-    blogs = Blog.objects.prefetch_related(
-        'blogtag_fk_blog'
-    ).filter(
-        blogtag_fk_blog__tag=tag
-    )
+    else:
+        blogs = Blog.objects.all().order_by('-created_at')
     
     blogs.order_by('-updated_at')
     
@@ -220,10 +212,10 @@ def get_blogs_by_tag(request):
 
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @json_response
 def get_blog_detail(request):
-    bloguid = request.GET.get('uid')
+    bloguid = request.POST.get('uid', None)
     
     try:
         blog = Blog.objects.get(pk=bloguid)
@@ -278,101 +270,103 @@ def get_blog_detail(request):
 @api_view(['POST'])
 @json_response
 def edit_blog(request):
+    validate_token(request.auth)
+    user = request.user
     data = request.data.copy()
     
-    # user = request.user
-    _user = data.pop('author', None)
-    user = User.objects.get(username=_user)
-    
-    try:
-        blog = Blog.objects.get(
-            pk=request.GET.get('uid'),
+    uid = request.query_params.get('uid', None)
+    if (uid is None):
+        raise ValidationError(
+            message=UID_REQUIRED
         )
-    except Blog.DoesNotExist:
-        raise ValidationError(BLOG_NOT_EXIST)
-        
-    name = data.pop('name', blog.name)
-    content = data.pop('content', blog.content)
-    is_published = data.pop('is_published', blog.is_published)
     
-    if (name is None):
-        raise ValidationError(EMPTY_NAME_BLOG)
+    blog = Blog.get_by_uid(uid=uid)
     
-    if (len(name) > 255):
-        raise ValidationError(MAX_LENGTH_BLOG_NAME)
-    if (len(content) > 255):
-        raise ValidationError(MAX_LENGTH_BLOG_CONTENT)
+    blog.name = data.pop('name', blog.name)
+    blog.content = data.pop('content', blog.content)
+    blog.is_published = data.pop('is_published', blog.is_published)
+     
+    blog.is_valid()
     
-    # change detail of blog
-    blog.name = name
-    blog.content = content
-    blog.is_published = is_published
-    blog.save()
-        
-    # create blog history when edit
-    # bloghistory = BlogHistory.objects.get(
-    #     blog=blog,
-    #     revision=1,
-    # )
-    # if BlogHistory.DoesNotExist:
-    #     bloghistory = BlogHistory.objects.create(
-    #         name=name,
-    #         content=content,
-    #         is_published=is_published,
-    #         blog=blog,
-    #         revision=1,
-    #         author=user,
-    #     )
-    # else:
-    #     old_revision = bloghistory.revision
-    #     # increase revision when edit
-    #     blog_history = BlogHistory.objects.create(
-    #         name=name,
-    #         content=content,
-    #         is_published=is_published,
-    #         blog=blog,
-    #         revision=old_revision+1,
-    #         author=user,
-    #     )
-        
-    # get list of tags in a blog before edit
-    blog_tags = Tag.objects.prefetch_related(
-        'blogtag_fk_tag'
-    ).filter(
-        blogtag_fk_tag__blog=blog
+    # Xu ly tags
+    tags_name = data.pop('tags', [])
+    
+    current_blog_tags = BlogTag.objects.filter(
+        tag__name__in=tags_name,
+        blog=blog,
     )
-    
-    tags = data.pop('tag', None)
-    if tags is not None:
-        for tag in tags:
-            # get tag by name in the list of tags
-            tag_name = tag.pop("name")
-            
-            exist = False
-            for blog_tag in blog_tags:
-                if blog_tag.name != tag_name:
-                    exist = False
-                else:
-                    exist = True
-                    break
-            
-            _tag = Tag.get_tag_by_name(tag_name)
-            
-            # if tag not exist, create tag
-            if _tag is None:
-                _tag = Tag.objects.create(
-                    author=blog.author,
-                    name=tag_name,
-                    description="",
-                )
+        
+    current_blog_tags_name = current_blog_tags.values_list(
+        'tag__name',
+        flat=True,
+    )
+
+    remove_blog_tags = BlogTag.objects.filter(
+        blog=blog
+    ).exclude(
+        tag__name__in=tags_name
+    )
+        
+    new_blog_tags = []
+        
+    for tag_name in tags_name:
+        if not (tag_name in current_blog_tags_name):
+            new_tag, created = Tag.objects.get_or_create(name=tag_name)
                 
-            blogtag = BlogTag.get_blog_tag(blog, _tag)            
-            # create blogtag for every tag if not exist
-            if blogtag is None:
-                blogtag = BlogTag.objects.create(
+            new_blog_tags.append(
+                BlogTag(
                     blog=blog,
-                    tag=_tag,
+                    tag=new_tag,
                 )
+            )
+                
+    BlogTag.objects.bulk_create(
+        objs=new_blog_tags,
+        ignore_conflicts=True
+    )
+        
+    remove_blog_tags.delete()
+    
+    # Xu ly attachments
+    attachments_uid = data.pop('attachments', [])
+    
+    current_blog_attachments = BlogAttachment.objects.filter(
+        attachment__uid__in=attachments_uid,
+        blog=blog,
+    )
+        
+    current_blog_attachments_uid = current_blog_attachments.values_list(
+        'attachment__uid',
+        flat=True,
+    )
+
+    remove_blog_attachments = BlogAttachment.objects.filter(
+        blog=blog
+    ).exclude(
+        attachment__uid__in=attachments_uid
+    )
+        
+    new_blog_attachments = []
+        
+    for attachment_uid in attachments_uid:
+        if not (attachment_uid in current_blog_attachments_uid):
+            new_attachment = Attachment.objects.get(uid=attachment_uid)
+            
+            new_blog_attachments.append(
+                BlogAttachment(
+                    blog=blog,
+                    attachment=new_attachment,
+                )
+            )
+                
+    BlogAttachment.objects.bulk_create(
+        objs=new_blog_attachments,
+        ignore_conflicts=True
+    )
+        
+    remove_blog_attachments.delete()
+
+    blog.save()
     
     return BlogSerializer(blog).data
 
@@ -380,12 +374,10 @@ def edit_blog(request):
 @api_view(['POST'])
 @json_response
 def create_blog_like(request):
+    validate_token(request.auth)
+    user = request.user
     data = request.data.copy()
     bloguid = data.pop("blog", None)
-    
-    # user = request.user
-    userid = data.pop("author", None)
-    user = User.objects.get(id=userid)
     
     try:
         blog = Blog.objects.get(pk=bloguid)
@@ -417,12 +409,10 @@ def create_blog_like(request):
 @api_view(['DELETE'])
 @json_response
 def blog_unlike(request):
-    # user = request.user
+    validate_token(request.auth)
+    user = request.user
     data = request.data.copy()
     bloguid = data.pop("blog", None)
-    
-    userid = data.pop("author", None)
-    user = User.objects.get(id=userid)
     
     try:
         blog = Blog.objects.get(pk=bloguid)
@@ -442,12 +432,12 @@ def blog_unlike(request):
 @api_view(['DELETE'])
 @json_response
 def delete_blog(request):
-    # user = request.user
+    validate_token(request.auth)
+    user = request.user
     data = request.GET.get('uid', None)
     
-    
-    
     blog = Blog.objects.get(
+        author=user,
         pk=data
     ).delete()
     

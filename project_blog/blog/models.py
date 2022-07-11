@@ -3,7 +3,8 @@ from django.db import models
 
 from user_account.models import User
 from attachment.models import Attachment
-
+from django.forms import ValidationError
+from utils.messages import BLOG_NOT_EXIST, MAX_LENGTH_BLOG_NAME, MAX_LENGTH_BLOG_CONTENT
 
 class Blog(models.Model):
     uid = models.UUIDField(
@@ -55,6 +56,37 @@ class Blog(models.Model):
         null=True,
         blank=True,
     )
+    
+    @staticmethod
+    def get_by_uid(uid:str):
+        try:
+            return Blog.objects.get(uid=uid)
+        except Blog.DoesNotExist:
+            raise ValidationError(BLOG_NOT_EXIST)
+        
+    def is_valid(self):
+        if (len(self.name) > 255):
+            raise ValidationError(MAX_LENGTH_BLOG_NAME)
+        if (len(self.content) > 255):
+            raise ValidationError(MAX_LENGTH_BLOG_CONTENT)
+    
+    def save(self, *args, **kwargs):
+        if not (self.pk):
+            revision = BlogHistory.objects.filter(
+                blog=self
+            ).aggregate(models.Max('revision'))
+        
+            BlogHistory.objects.create(
+                revision=revision+1 if (revision) else 1,
+                name=self.name,
+                content=self.content,
+                is_published=self.is_published,
+                blog=self,
+                author=self.author,
+            )
+        return super().save(*args, **kwargs)
+   
+        
 
     def __str__(self) -> str:
         return self.name

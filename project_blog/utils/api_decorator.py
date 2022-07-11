@@ -1,5 +1,5 @@
 from django.core.paginator import Paginator
-from django.forms import ValidationError
+from rest_framework.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.response import Response
 

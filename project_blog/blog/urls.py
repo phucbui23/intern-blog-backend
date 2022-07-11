@@ -7,7 +7,7 @@ urlpatterns = [
     path('get/', views.get_matrix_blogs),
     path('bytag/', views.get_blogs_by_tag),
     path('edit/', views.edit_blog),
-    path('', views.get_blog_detail),
+    path('detail/', views.get_blog_detail),
     path('like/', views.create_blog_like),
     path('unlike/', views.blog_unlike),
     path('delete/', views.delete_blog),

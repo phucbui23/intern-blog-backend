@@ -4,5 +4,5 @@ from tag import views
 
 
 urlpatterns = [
-    path('create/', views.create_tag),
+    path('most_used/', views.get_most_used_tag),
 ]

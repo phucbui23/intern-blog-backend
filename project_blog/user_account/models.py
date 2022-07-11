@@ -53,7 +53,7 @@ class User(AbstractBaseUser):
     objects = UserManager()
     REQUIRED_FIELD = ('email',)
     USERNAME_FIELD = 'email'
-    username = models.CharField(max_length=255, unique=True)
+    username = models.CharField(max_length=255)
     email = models.CharField(
         max_length=255,
         null=False,
@@ -124,7 +124,7 @@ class User(AbstractBaseUser):
         return True
     
     def __str__(self) -> str:
-        return self.username
+        return self.email
 
     @staticmethod
     def get_user(email):
@@ -174,3 +174,6 @@ class Follower(models.Model):
         null=True,
         blank=True,
     )
+
+    def __str__(self) -> str:
+        return self.follower.email

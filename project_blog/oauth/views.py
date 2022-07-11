@@ -1,19 +1,17 @@
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError
-from django.core.validators import validate_email
-from datetime import datetime, timedelta
-from django.contrib.auth import password_validation
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from datetime import datetime, timedelta
 
 from utils.api_decorator import json_response
 from utils.send_email import send_email
 from utils.enums import Type
 from utils.validate_token import validate_token
+from utils.validate_input import (validate_email ,validate_password)
 from utils.messages import (
-    EMPTY_PASSWORD_FIELDS,
-    INVALID_TOKEN, NOT_ACTIVE, 
-    EXPIRED_TOKEN, EMPTY_EMAIL_FIELDS, 
-    ACCOUNT_ACTIVE, ACCOUNT_NOT_ACTIVE, WRONG_PASSWORD)
+        INVALID_TOKEN, NOT_ACTIVE,EXPIRED_TOKEN,
+        ACCOUNT_ACTIVE, ACCOUNT_NOT_ACTIVE, WRONG_PASSWORD
+    )
 from user_account.models import User
 
 from .models import UserActivation, UserDeviceToken, ResetPassword
@@ -26,10 +24,8 @@ from .serializers import UserDeviceTokenSerialier
 def activate(request):
     password = request.POST.get('password', None)
 
-    if (not password):
-        raise ValidationError(EMPTY_PASSWORD_FIELDS)
+    validate_password(password=password)
 
-    password_validation.validate_password(password=password)
     try:
         token = UserActivation.objects.get(token=request.query_params['token'])
     except:
@@ -61,10 +57,7 @@ def activate(request):
 def resend_email(request):
     email = request.POST.get('email', None)
 
-    if (not email):
-        raise ValidationError(EMPTY_EMAIL_FIELDS)
-    
-    validate_email(email)
+    validate_email(email=email)
 
     user = User.get_user(email=email)
 
@@ -78,19 +71,15 @@ def resend_email(request):
 
     return True
 
+
 @api_view(['POST'])
 @json_response
 def log_in(request):
     email = request.POST.get('email', None)
     password = request.POST.get('password', None)
 
-    if (not email):
-        raise ValidationError(EMPTY_EMAIL_FIELDS)
-    
-    if (not password):
-        raise ValidationError(EMPTY_PASSWORD_FIELDS)
-
-    validate_email(email)
+    validate_email(email=email)
+    validate_password(password=password)
 
     user = User.get_user(email=email) 
 
@@ -109,7 +98,6 @@ def log_in(request):
         active=True,
     )
     
-    
     return UserDeviceTokenSerialier(
         instance=device_token,
         many=False
@@ -121,8 +109,7 @@ def log_in(request):
 def forgot_password(request):
     email = request.POST.get('email', None)
 
-    if (not email):
-        raise ValidationError(EMPTY_EMAIL_FIELDS)
+    validate_email(email=email)
 
     user = User.get_user(email=email)
     
@@ -142,11 +129,7 @@ def forgot_password(request):
 def reset_password(request):
     password = request.POST.get('password', None)
 
-    if (not password):
-        raise ValidationError(EMPTY_PASSWORD_FIELDS)
-
-    password_validation.validate_password(password=password)
-
+    validate_password(password=password)
     try:
         token = ResetPassword.objects.get(token=request.query_params['token'])
     except:
@@ -163,14 +146,15 @@ def reset_password(request):
     if ( expr < datetime.now()):
         raise ValidationError(EXPIRED_TOKEN)
     
-    token.active=True,
-    token.updated_at=datetime.now(),
+    token.active= True
+    token.updated_at = datetime.now()
     token.save()
 
     user.set_password(password)
     user.save()
 
     return True
+
 
 @api_view(['PUT'])
 @json_response
