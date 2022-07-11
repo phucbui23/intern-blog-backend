@@ -1,9 +1,6 @@
 import re
 from rest_framework.exceptions import ValidationError
-from .messages import (EMPTY_EMAIL_FIELDS, INVALID_EMAIL, MAX_LENGTH_EMAIL, EMPTY_PASSWORD_FIELDS,
-    INVALID_LENGTH_PASSWORD,MAX_LENGTH_FULLNAME, MAX_LENGTH_NICK_NAME, MAX_LENGTH_PHONE_NUMBER,
-    EMPTY_FULLNAME_FIELDS, EMPTY_NICKNAME_FIELDS,EMPTY_PHONENUMBER_FIELDS,
-)
+from .messages import *
 
 EMAIL_REGEX = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
 

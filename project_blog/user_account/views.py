@@ -4,7 +4,6 @@ from rest_framework.exceptions import NotFound, ValidationError
 from utils.api_decorator import json_response, paginator
 from utils.enums import Type
 from utils.send_email import send_email
-from utils.validate_token import validate_token
 from utils.validate_input import (
     validate_email, validate_password,
     validate_fullname, validate_nickname, validate_phone_number)
@@ -22,7 +21,6 @@ from .serializers import FollowerSerializer, UserSerializer
 @api_view()
 @json_response
 def get_user_info(request):
-    validate_token(token=request.auth)
     user = User.objects.get(email=request.user.email)
     
     blog =  Blog.objects.filter(author=user, is_published=True)
@@ -89,8 +87,6 @@ def sign_up(request):
 @api_view(['PUT'])
 @json_response
 def edit_profile(request):
-    validate_token(request.auth)
-    
     user = request.user
 
     phone_number = request.POST.get('phone_number', user.phone_number)
@@ -118,8 +114,6 @@ def edit_profile(request):
 @api_view(['PUT'])
 @json_response
 def change_password(request):
-    validate_token(request.auth)
-
     user = request.user
     current_password = request.POST.get('current_password', None)
     new_password = request.POST.get('new_password', None)
@@ -146,8 +140,6 @@ def change_password(request):
 @api_view(['PUT'])
 @json_response
 def follow_by_blog(request):
-    validate_token(request.auth)
-
     try:
         uid_blog = request.POST.get('blog_uid')
         blog = Blog.objects.get(uid=uid_blog)
@@ -183,8 +175,6 @@ def follow_by_blog(request):
 @api_view(['PUT'])
 @json_response
 def follow_user(request):
-    validate_token(request.auth)
-
     try:
         author_email = request.POST.get('email')
         author = User.get_user(email=author_email)
