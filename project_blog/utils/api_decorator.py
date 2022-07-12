@@ -41,7 +41,7 @@ def json_response(func):
                 status=status.HTTP_200_OK,
             )
         except Exception as e:
-            # raise e 
+            raise e 
             return Response(
                 data={
                     'data': None, 

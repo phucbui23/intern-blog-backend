@@ -1,11 +1,9 @@
 from datetime import datetime
 
-from django.forms import ValidationError
+from django.core.files.storage import FileSystemStorage
 from rest_framework.decorators import api_view
-from user_account.models import User
 # Create your views here.
 from utils.api_decorator import json_response
-from utils.messages import USER_NOT_FOUND
 
 from .models import Attachment
 from .serializers import AttachmentSerializer
@@ -14,21 +12,20 @@ from .serializers import AttachmentSerializer
 @api_view(['POST'])
 @json_response
 def create_attachment(request):
-    data = request.data.dict().copy()
-    username = data.pop('user', None)
-    file_name = data.pop('file_name', None) + str(datetime.now())
-    
-    try:
-        user = User.objects.get(
-            username=username,
-        )
-    except User.DoesNotExist:
-        raise ValidationError(USER_NOT_FOUND)
-        
+    data = request.POST.copy()
+    user = request.user
+    file = request.FILES.pop('file')[0]
+
+    fs = FileSystemStorage(location='static/')
+    fname = fs.save(file.name, file)
+    # file_name = data.pop('file', '') + str(datetime.now())
+
     new_attachment = Attachment.objects.create(
+        file_name=fname,
+        display_name=file.name,
+        file_path=fs.url(fname), 
         **data,
         user=user,   
-        file_name=file_name, 
     )
 
     data = AttachmentSerializer(
