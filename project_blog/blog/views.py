@@ -208,10 +208,10 @@ def get_blogs_by_tag(request):
             blogtag_fk_blog__tag=tag
         )
         
+        blogs.order_by('-updated_at')
+        
     else:
         blogs = Blog.objects.all().order_by('-created_at')
-    
-    blogs.order_by('-updated_at')
     
     return BlogSerializer(
         instance=blogs,
@@ -587,4 +587,26 @@ def get_new_blog(request):
     return BlogSerializer(
         instance=blogs,
         many=True,
+    ).data
+    
+
+@api_view(['GET'])
+@json_response
+def get_blog_likes(request):
+    blog_uid = request.query_params.get('blog_uid', None)
+    
+    try:
+        blog = Blog.objects.get(uid=blog_uid)
+    except Blog.DoesNotExist:
+        raise ValidationError(
+            message=BLOG_NOT_EXIST
+        )
+        
+    blog_likes = BlogLike.objects.filter(
+        blog=blog
+    )
+        
+    return BlogLikeSerializer(
+        instance=blog_likes,
+        many=True
     ).data
