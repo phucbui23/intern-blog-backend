@@ -1,5 +1,6 @@
 from django.db import models
 
+from blog.models import Blog
 from user_account.models import User
 from utils.enums import Notification_type
 
@@ -39,6 +40,17 @@ class Notification(models.Model):
         to_field='id',
         related_name='notification_fk_author',
         db_column='author_id',
+        db_constraint=False,
+        null=False,
+        blank=False,
+    )
+    
+    blog = models.ForeignKey(
+        to=Blog, 
+        on_delete=models.CASCADE,
+        to_field='uid',
+        related_name='notification_fk_blog',
+        db_column='blog_uid',
         db_constraint=False,
         null=False,
         blank=False,

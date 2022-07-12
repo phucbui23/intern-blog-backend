@@ -74,9 +74,10 @@ class BlogSerializer(serializers.ModelSerializer):
                 blog=instance
             ).count()
             
-            data['likes'] = likes
         except BlogLike.DoesNotExist:
             likes = 0
+            
+        data['likes'] = likes
             
         return data
         
