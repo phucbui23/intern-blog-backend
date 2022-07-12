@@ -11,4 +11,6 @@ urlpatterns = [
     path('like/', views.create_blog_like),
     path('unlike/', views.blog_unlike),
     path('delete/', views.delete_blog),
+    path('my_blog/', views.get_user_blog),
+    path('follower_blog/', views.get_follower_blog)
 ]
