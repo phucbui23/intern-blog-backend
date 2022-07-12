@@ -1,10 +1,9 @@
-from rest_framework import serializers
 from attachment.models import Attachment
 from attachment.serializers import AttachmentSerializer
-from blog.models import Blog
 from blog.serializers import BlogSerializer
-from .models import User, Follower
+from rest_framework import serializers
 
+from .models import Follower, User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -41,18 +40,3 @@ class FollowerSerializer(serializers.ModelSerializer):
         model = Follower
         fields = ('author', 'follow_by','active', 'total_blog', 'most_liked_blog',)
         read_only_fields = fields
-    
-    # def to_representation(self, instance):
-    #     data = super().to_representation(instance)
-    #     # author = User.objects.get(pk=instance.author_id)
-    #     # follower = User.objects.get(pk=instance.follower_id)
-
-    #     if instance.follow_by_id:
-    #         follow_by = Blog.objects.get(pk=instance.follow_by_id)
-    #         data['follow_by'] = BlogSerializer(instance=follow_by, many=False).data
-
-    #     # data['author'] = UserSerializer(instance=author, many=False).data
-    #     # data['follower'] = UserSerializer(instance=follower, many=False).data
-        
-    #     return data
-        

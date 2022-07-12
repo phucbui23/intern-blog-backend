@@ -162,19 +162,26 @@ def create_blog(request):
             objs=new_blog_attachments,
             ignore_conflicts=True
         )
-        
-    print(new_blog.uid)
     
-    new_noti = Notification.objects.create(
-        type=Notification_type.FOLLOWER_NEW_POST,
-        author=user,
-        subject='Follower\'s new post',
-        content=new_blog.uid,
+    followers = Follower.objects.filter(
+        author=user
     )
     send_email(
         user=user, 
         type_email=Type.FOLLOWER_POST
     )
+    
+    for follower in followers:
+        follower_user = follower.follower
+        
+        new_noti = Notification.objects.create(
+            type=Notification_type.FOLLOWER_NEW_POST,
+            author=follower_user,
+            blog=new_blog,
+            subject='Có bài viết mới',
+            content=user.full_name+' vừa thêm bài viết mới',
+        )
+    
     return BlogSerializer(
         instance=new_blog, 
         many=False,
@@ -205,10 +212,10 @@ def get_blogs_by_tag(request):
             blogtag_fk_blog__tag=tag
         )
         
+        blogs.order_by('-updated_at')
+        
     else:
         blogs = Blog.objects.all().order_by('-created_at')
-    
-    blogs.order_by('-updated_at')
     
     return BlogSerializer(
         instance=blogs,
@@ -474,8 +481,10 @@ def create_blog_like(request):
     new_noti = Notification.objects.create(
         type=Notification_type.BLOG_LIKED,
         author=user,
-        subject='Blog is liked',
-        content=blog.uid,
+        blog=blog,
+        subject='Bài viết của bạn được yêu thích',
+        content='Bài viết "'+blog.name
+            +'" của bạn đã được yêu thích bởi '+user.full_name,
     )
     
     return data
@@ -585,4 +594,26 @@ def get_new_blog(request):
     return BlogSerializer(
         instance=blogs,
         many=True,
+    ).data
+    
+
+@api_view(['GET'])
+@json_response
+def get_blog_likes(request):
+    blog_uid = request.query_params.get('blog_uid', None)
+    
+    try:
+        blog = Blog.objects.get(uid=blog_uid)
+    except Blog.DoesNotExist:
+        raise ValidationError(
+            message=BLOG_NOT_EXIST
+        )
+        
+    blog_likes = BlogLike.objects.filter(
+        blog=blog
+    )
+        
+    return BlogLikeSerializer(
+        instance=blog_likes,
+        many=True
     ).data
