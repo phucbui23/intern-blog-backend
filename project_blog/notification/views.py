@@ -5,6 +5,7 @@ from attachment.models import Attachment
 from attachment.serializers import AttachmentSerializer
 from blog.models import Blog, BlogLike
 from blog.serializers import BlogSerializer
+from user_account.models import Follower
 from utils.api_decorator import json_response
 from utils.messages import BLOG_NOT_EXIST
 
@@ -17,14 +18,16 @@ from .serializers import NotificationSerializer
 def get_notifications(request):
     user = request.user
     
-    notificaions = Notification.objects.filter(
+    notifications = Notification.objects.filter(
         author=user
-    )
+    ).order_by('-sended_at')
     
-    return NotificationSerializer(
-        instance=notificaions,
+    data = NotificationSerializer(
+        notifications,
         many=True
     ).data
+    
+    return data
 
 
 @api_view(['POST'])
@@ -67,12 +70,22 @@ def access_notification(request):
     ).data
     
     # check if user have liked the blog
-    liked = BlogLike.objects.get(
+    liked = BlogLike.objects.filter(
         author=user,
         blog=blog,
-    )
+    ).exists()
     
-    data['liked'] = True if (liked) else False
+    data['is_liked'] = liked
+    
+    # check if user have followed the author
+    is_followed = Follower.objects.filter(
+        author=blog.author,
+        follower=user,
+        follow_by=blog,
+        active=True,
+    ).exists()
+    
+    data['is_followed'] = is_followed
     
     return data
     
