@@ -150,8 +150,8 @@ REST_FRAMEWORK = {
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'trumbb301@gmail.com'
-EMAIL_HOST_PASSWORD = 'ttfohmbshqtxfijn'
+EMAIL_HOST_USER = 'demo.blog.intern@gmail.com'
+EMAIL_HOST_PASSWORD = 'dqtawgtfozgsahom'
 
 
 SIMPLE_JWT = {

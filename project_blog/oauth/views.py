@@ -28,7 +28,7 @@ def activate(request):
         raise ValidationError(INVALID_TOKEN)
     
     if (not token.active):
-        raise Exception(NOT_ACTIVE)
+        raise ValidationError(NOT_ACTIVE)
 
     user = token.author
     UserActivation.objects.filter(author=user).update(active=False)
@@ -58,7 +58,7 @@ def resend_email(request):
     user = User.get_user(email=email)
 
     if (user.active):
-        raise Exception(ACCOUNT_ACTIVE)
+        raise ValidationError(ACCOUNT_ACTIVE)
     
     send_email(
         user=user, 
@@ -132,7 +132,7 @@ def reset_password(request):
         raise ValidationError(INVALID_TOKEN)
     
     if (not token.active):
-        raise Exception(NOT_ACTIVE)
+        raise ValidationError(NOT_ACTIVE)
     
     user = token.author
 
