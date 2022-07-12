@@ -11,7 +11,6 @@ from utils.send_email import send_email
 from utils.validate_input import (validate_email, validate_fullname,
                                   validate_nickname, validate_password,
                                   validate_phone_number)
-from utils.validate_token import validate_token
 
 from .models import Follower, User
 from .serializers import FollowerSerializer, UserSerializer
