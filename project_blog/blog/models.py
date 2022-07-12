@@ -98,7 +98,9 @@ class Blog(models.Model):
             )
         return super().save(*args, **kwargs)
    
-        
+    @staticmethod
+    def get_latest_blog(author:User):
+        return Blog.objects.filter(author=author).order_by('-created_at').first()
 
     # def __str__(self) -> str:
     #     return self.name

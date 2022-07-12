@@ -12,7 +12,7 @@ urlpatterns = [
     path('unlike/', views.blog_unlike),
     path('delete/', views.delete_blog),
     path('my_blog/', views.get_user_blog),
-    path('follower_blog/', views.get_follower_blog),
+    path('author_blog/', views.get_author_blog),
     path('new_blogs/', views.get_new_blog),
     path('get_likes/', views.get_blog_likes),
 ]
