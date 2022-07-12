@@ -115,7 +115,7 @@ def create_blog(request):
         raise ValidationError(MAX_LENGTH_BLOG_CONTENT)
     
     tags_name = data.pop('tags', [])
-    attachments_uid = data.pop('attachments', [])
+    attachment_uid = data.pop('attachments', [])
     
     new_blog = Blog.objects.create(
         **data,
@@ -145,22 +145,12 @@ def create_blog(request):
         )
         
     # xu ly attachments
-    if (len(attachments_uid) > 0):
-        new_blog_attachments = []
-        
-        for attachment_uid in attachments_uid:
-            new_attachment = Attachment.objects.get(uid=attachment_uid)
+    if (len(attachment_uid) > 0):        
+        new_attachment = Attachment.objects.get(uid=attachment_uid)
                 
-            new_blog_attachments.append(
-                BlogAttachment(
-                    blog=new_blog,
-                    attachment=new_attachment,
-                )
-            )
-                
-        BlogAttachment.objects.bulk_create(
-            objs=new_blog_attachments,
-            ignore_conflicts=True
+        BlogAttachment.objects.create(
+            blog=new_blog,
+            attachment=new_attachment,
         )
     
     followers = Follower.objects.filter(

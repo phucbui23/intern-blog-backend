@@ -51,7 +51,7 @@ class Notification(models.Model):
         to_field='uid',
         related_name='notification_fk_blog',
         db_column='blog_uid',
-        db_constraint=False,
+        db_constraint=True,
         null=False,
         blank=False,
     )
