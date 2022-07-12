@@ -330,6 +330,10 @@ def get_blog_detail(request):
             blog=blog,
         ).exists()
         data['is_liked'] = is_liked
+        
+    else:
+        data['is_followed'] = False
+        data['is_liked'] = False
 
     return data
 
