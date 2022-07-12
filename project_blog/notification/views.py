@@ -1,3 +1,4 @@
+from django.forms import ValidationError
 from rest_framework.decorators import api_view
 
 from attachment.models import Attachment
@@ -5,6 +6,7 @@ from attachment.serializers import AttachmentSerializer
 from blog.models import Blog, BlogLike
 from blog.serializers import BlogSerializer
 from utils.api_decorator import json_response
+from utils.messages import BLOG_NOT_EXIST
 
 from .models import Notification
 from .serializers import NotificationSerializer
@@ -39,9 +41,14 @@ def access_notification(request):
     notification.is_seen = True
     notification.save()
     
-    blog = Blog.objects.get(
-        uid=notification.blog.uid
-    )
+    try:
+        blog = Blog.objects.get(
+            uid=notification.blog.uid
+        )
+    except Blog.DoesNotExist:
+        raise ValidationError(
+            message=BLOG_NOT_EXIST
+        )
     
     data = BlogSerializer(
         instance=blog

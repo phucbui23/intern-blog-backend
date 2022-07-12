@@ -258,6 +258,9 @@ class BlogLike(models.Model):
         ).order_by(
             '-like'
         ).first()
+        
+    def __str__(self) -> str:
+        return f"{self.author.full_name} -> {self.blog.name}"
 
     class Meta:
         unique_together = (
