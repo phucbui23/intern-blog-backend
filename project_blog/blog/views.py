@@ -10,7 +10,6 @@ from tag.models import BlogTag, Tag
 from user_account.models import User
 from user_account.serializers import UserSerializer
 from utils.api_decorator import json_response, paginator
-from utils.validate_token import validate_token
 from utils.enums import Notification_type
 from utils.messages import *
 
