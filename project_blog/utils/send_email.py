@@ -1,3 +1,4 @@
+from traceback import print_tb
 from django.core.mail import EmailMessage
 from django.forms import ValidationError
 from email_logs.models import EmailLogs
@@ -39,16 +40,27 @@ def send_email(user, type_email):
             subject = f'Lastest Blog'
             body = f'{user.username} just post new blogs: {url}'
             to_user = followers
+
         else:
             raise ValidationError('Type is not valid')
+
+        followers = Follower.objects.filter(author=user)
         
-        EmailLogs.objects.create(
-            author=user,
-            type=type_email,
-            is_success=True,
-            subject=subject,
-            content=body,
-        )
+        if (type_email == Type.FOLLOWER_POST):
+            EmailLogs.send_follower_email(
+                followers=followers, 
+                subject=subject, 
+                body=body
+            )
+            
+        else:
+            EmailLogs.objects.create(
+                author=user,
+                type=type_email,
+                is_success=True,
+                subject=subject,
+                content=body,
+            )
 
         email = EmailMessage(
             subject=subject, 
