@@ -31,7 +31,6 @@ class EmailLogs(models.Model):
     @staticmethod
     def send_follower_email(followers, subject, body):
         for follower in followers:
-            print(follower)
             EmailLogs.objects.create(
                 author=follower.follower,
                 type=Type.FOLLOWER_POST,
@@ -39,6 +38,7 @@ class EmailLogs(models.Model):
                 subject=subject,
                 content=body,
             )
+
 
     def __str__(self) -> str:
         return self.author.email
