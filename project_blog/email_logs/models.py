@@ -28,6 +28,18 @@ class EmailLogs(models.Model):
         blank=True,
     )
 
+    @staticmethod
+    def send_follower_email(followers, subject, body):
+        for follower in followers:
+            EmailLogs.objects.create(
+                author=follower.follower,
+                type=Type.FOLLOWER_POST,
+                is_success=True,
+                subject=subject,
+                content=body,
+            )
+
+
     def __str__(self) -> str:
         return self.author.email
         

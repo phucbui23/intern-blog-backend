@@ -1,4 +1,3 @@
-import email
 from attachment.models import Attachment
 from attachment.serializers import AttachmentSerializer
 
@@ -13,8 +12,9 @@ from tag.models import BlogTag, Tag
 from user_account.models import User
 from user_account.serializers import UserSerializer
 from utils.api_decorator import json_response, paginator
-from utils.enums import Notification_type
+from utils.enums import Notification_type, Type
 from utils.messages import *
+from utils.send_email import send_email
 
 from .models import Blog, BlogAttachment, BlogHistory, BlogLike
 from .serializers import BlogLikeSerializer, BlogSerializer
@@ -156,6 +156,10 @@ def create_blog(request):
     followers = Follower.objects.filter(
         author=user
     )
+    send_email(
+        user=user, 
+        type_email=Type.FOLLOWER_POST
+    )
     
     for follower in followers:
         follower_user = follower.follower
@@ -280,7 +284,6 @@ def get_blogs(request):
 @json_response
 def get_blog_detail(request):
     bloguid = request.POST.get('uid', None)
-    user = request.user
 
     try:
         blog = Blog.objects.get(pk=bloguid)
@@ -311,19 +314,22 @@ def get_blog_detail(request):
         many=False
     ).data
     
-    is_followed = Follower.objects.filter(
-        author=author,
-        follower=user,
-        follow_by=blog,
-        active=True,
-    ).exists()
-    data['is_followed'] = is_followed
+    user = request.user
 
-    is_liked = BlogLike.objects.filter(
-        author=user,
-        blog=blog,
-    ).exists()
-    data['is_liked'] = is_liked
+    if isinstance(user, User):
+        is_followed = Follower.objects.filter(
+            author=author,
+            follower=user,
+            follow_by=blog,
+            active=True,
+        ).exists()
+        data['is_followed'] = is_followed
+
+        is_liked = BlogLike.objects.filter(
+            author=user,
+            blog=blog,
+        ).exists()
+        data['is_liked'] = is_liked
 
     return data
 
@@ -529,7 +535,7 @@ def get_user_blog(request):
 @api_view()
 @json_response
 @paginator
-def get_follower_blog(request):
+def get_author_blog(request):
     user = request.user
     author_email = request.GET.get('author_email', None)
 
@@ -550,20 +556,21 @@ def get_follower_blog(request):
         many=True,
     ).data
 
-    for each_blog in data:
-        is_follow = Follower.objects.filter(
-            author=author,
-            follower=user,
-            follow_by=each_blog['uid'],
-            active=True,    
-        ).exists()
-        each_blog['is_follow'] = is_follow
+    if isinstance(user, User):
+        for each_blog in data:
+            is_follow = Follower.objects.filter(
+                author=author,
+                follower=user,
+                follow_by=each_blog['uid'],
+                active=True,    
+            ).exists()
+            each_blog['is_follow'] = is_follow
 
-        is_liked = BlogLike.objects.filter(
-            author=user,
-            blog=each_blog['uid'],
-        ).exists()
-        each_blog['is_liked'] = is_liked
+            is_liked = BlogLike.objects.filter(
+                author=user,
+                blog=each_blog['uid'],
+            ).exists()
+            each_blog['is_liked'] = is_liked
 
     return data
 
