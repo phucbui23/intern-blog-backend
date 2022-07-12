@@ -1,11 +1,14 @@
+import email
 from attachment.models import Attachment
 from attachment.serializers import AttachmentSerializer
 
+from django.db import models
 from django.db.models import Prefetch, Q
 from django.forms import ValidationError
 from rest_framework.decorators import api_view
 
 from notification.models import Notification
+from user_account.models import Follower
 from tag.models import BlogTag, Tag
 from user_account.models import User
 from user_account.serializers import UserSerializer
@@ -281,7 +284,8 @@ def get_blogs(request):
 @json_response
 def get_blog_detail(request):
     bloguid = request.POST.get('uid', None)
-    
+    user = request.user
+
     try:
         blog = Blog.objects.get(pk=bloguid)
     except Blog.DoesNotExist:
@@ -311,6 +315,20 @@ def get_blog_detail(request):
         many=False
     ).data
     
+    is_followed = Follower.objects.filter(
+        author=author,
+        follower=user,
+        follow_by=blog,
+        active=True,
+    ).exists()
+    data['is_followed'] = is_followed
+
+    is_liked = BlogLike.objects.filter(
+        author=user,
+        blog=blog,
+    ).exists()
+    data['is_liked'] = is_liked
+
     return data
 
 
@@ -502,7 +520,6 @@ def get_user_blog(request):
 
     blogs = Blog.objects.filter(
         author=user,
-        is_published=True,
     )
 
     return BlogSerializer(
@@ -515,12 +532,51 @@ def get_user_blog(request):
 @json_response
 @paginator
 def get_follower_blog(request):
-    ...
+    user = request.user
+    author_email = request.GET.get('author_email', None)
 
+    author = User.get_user(email=author_email)
+
+    blogs_data = Blog.objects.filter(
+            author=author
+        ).prefetch_related(
+            'bloglike_fk_blog'
+        ).annotate(
+            like=models.Count('bloglike_fk_blog')
+        ).order_by(
+            '-like'
+        )
+
+    data = BlogSerializer(
+        instance=blogs_data,
+        many=True,
+    ).data
+
+    for each_blog in data:
+        is_follow = Follower.objects.filter(
+            author=author,
+            follower=user,
+            follow_by=each_blog['uid'],
+            active=True,    
+        ).exists()
+        each_blog['is_follow'] = is_follow
+
+        is_liked = BlogLike.objects.filter(
+            author=user,
+            blog=each_blog['uid'],
+        ).exists()
+        each_blog['is_liked'] = is_liked
+
+    return data
 
 
 @api_view()
 @json_response
 @paginator
 def get_new_blog(request):
-    ...
+    blogs = Blog.objects.all().order_by('-created_at')
+
+    return BlogSerializer(
+        instance=blogs,
+        many=True,
+    ).data
