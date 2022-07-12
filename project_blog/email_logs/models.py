@@ -41,5 +41,5 @@ class EmailLogs(models.Model):
 
 
     def __str__(self) -> str:
-        return self.author.email
+        return f'{self.author.email} -> {self.type}'
         
