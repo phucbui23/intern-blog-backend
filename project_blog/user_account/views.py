@@ -19,24 +19,42 @@ from .serializers import FollowerSerializer, UserSerializer
 @api_view()
 @json_response
 def get_user_info(request):
+    author_email = request.GET.get('author_email', None)
     user = User.objects.get(email=request.user.email)
-    
-    blog =  Blog.objects.filter(author=user, is_published=True)
-    blog_num = blog.count()
-    like_num = 0
-    for each_blog in blog:
-        like_num += BlogLike.objects.filter(blog=each_blog).count()
-        
-    follow_num = Follower.objects.filter(author=user, active=True).count()
 
-    data = UserSerializer(
-        instance=user,
-        many=False,
-    ).data
+    if (author_email):
+        author = User.get_user(email=author_email)
 
-    data['blog_numbers'] = blog_num
-    data['like_numbers'] = like_num
-    data['follow_numbers'] = follow_num
+        data = UserSerializer(
+            instance=author,
+            many=False,
+        ).data
+
+        if (request.user):
+            is_followed = Follower.objects.filter(
+                author=author,
+                follower=user,
+                active=True,    
+            ).exists()
+            data['is_followed'] = is_followed
+
+    else:
+        blog =  Blog.objects.filter(author=user, is_published=True)
+        blog_num = blog.count()
+        like_num = 0
+        for each_blog in blog:
+            like_num += BlogLike.objects.filter(blog=each_blog).count()
+            
+        follow_num = Follower.objects.filter(author=user, active=True).count()
+
+        data = UserSerializer(
+            instance=user,
+            many=False,
+        ).data
+
+        data['blog_numbers'] = blog_num
+        data['like_numbers'] = like_num
+        data['follow_numbers'] = follow_num
 
     return data
 

@@ -36,6 +36,13 @@ def send_email(user, type_email):
         elif (type_email == Type.FOLLOWER_POST):
             followers = list(Follower.objects.filter(author=user).values_list('follower__email', flat=True))
             blog = Blog.get_latest_blog(author=user)
+
+            if (not followers):
+                return None
+
+            if (not blog):
+                return None
+
             url = f'{DOMAIN}/detail?uid={blog.uid}'
             subject = f'Lastest Blog'
             body = f'{user.username} just post new blogs: {url}'
