@@ -1,11 +1,10 @@
-from attachment.serializers import AttachmentSerializer
 from rest_framework import serializers
 
 from attachment.models import Attachment
 from attachment.serializers import AttachmentSerializer
 from tag.serializers import TagSerializer
 from tag.models import Tag
-from user_account.models import User
+from user_account.models import User, Follower
 
 from .models import (
     Blog, 
@@ -73,10 +72,9 @@ class BlogSerializer(serializers.ModelSerializer):
             likes = BlogLike.objects.filter(
                 blog=instance
             ).count()
-            
         except BlogLike.DoesNotExist:
             likes = 0
-            
+
         data['likes'] = likes
             
         return data
