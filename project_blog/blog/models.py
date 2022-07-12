@@ -83,13 +83,13 @@ class Blog(models.Model):
             raise ValidationError(MAX_LENGTH_BLOG_CONTENT)
     
     def save(self, *args, **kwargs):
-        if not (self.pk):
-            revision = BlogHistory.objects.filter(
+        if (self.pk):
+            blog_history = BlogHistory.objects.filter(
                 blog=self
             ).aggregate(models.Max('revision'))
         
-            BlogHistory.objects.create(
-                revision=revision+1 if (revision) else 1,
+            new_blog_history = BlogHistory.objects.create(
+                revision=blog_history['revision__max']+1 if (blog_history['revision__max']) else 1,
                 name=self.name,
                 content=self.content,
                 is_published=self.is_published,
