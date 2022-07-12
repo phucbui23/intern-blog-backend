@@ -1,10 +1,10 @@
-from traceback import print_tb
 from django.core.mail import EmailMessage
 from django.forms import ValidationError
 from email_logs.models import EmailLogs
 from oauth.models import UserActivation, ResetPassword
 from blog.models import Blog
 from user_account.models import Follower
+from utils.messages import INVALID_TYPE, SEND_FAIL
 from .gen_token import gen_token
 from .constant import DOMAIN
 from .enums import Type
@@ -49,7 +49,7 @@ def send_email(user, type_email):
             to_user = followers
 
         else:
-            raise ValidationError('Type is not valid')
+            raise ValidationError(INVALID_TYPE)
 
         followers = Follower.objects.filter(author=user)
         
@@ -76,4 +76,4 @@ def send_email(user, type_email):
         )
         email.send()
     except: 
-        raise ValueError('Send Email Failed')
+        raise ValueError(SEND_FAIL)

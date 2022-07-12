@@ -34,4 +34,5 @@ MAX_LENGTH_TAG_NAME = "Name of tag is only maximum 255 chars"
 USER_NOT_FOUND = "User not found"
 
 UID_REQUIRED = 'UID is required'
-
+INVALID_TYPE = 'Type is invalid' 
+SEND_FAIL = 'Send email failed'

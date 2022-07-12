@@ -73,9 +73,9 @@ def sign_up(request):
     try:
         exist_user = User.get_user(email=email)
         if (exist_user.active):
-            raise Exception(ACCOUNT_ACTIVE)
+            raise ValidationError(ACCOUNT_ACTIVE)
         else:
-            raise Exception(ACCOUNT_NOT_ACTIVE)
+            raise ValidationError(ACCOUNT_NOT_ACTIVE)
     except NotFound:
 
         username = email.split('@')[0]
@@ -251,5 +251,3 @@ def get_user_following(request):
     ).data
 
     return data
-
-    
