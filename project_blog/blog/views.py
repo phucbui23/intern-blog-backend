@@ -500,3 +500,35 @@ def delete_blog(request):
     ).delete()
     
     return None
+
+
+@api_view()
+@json_response
+@paginator
+def get_user_blog(request):
+    user = request.user
+
+    blogs = Blog.objects.filter(
+        author=user,
+        is_published=True,
+    )
+
+    return BlogSerializer(
+        instance=blogs,
+        many=True
+    ).data
+
+
+@api_view()
+@json_response
+@paginator
+def get_follower_blog(request):
+    ...
+
+
+
+@api_view()
+@json_response
+@paginator
+def get_new_blog(request):
+    ...
