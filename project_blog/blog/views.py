@@ -162,15 +162,21 @@ def create_blog(request):
             objs=new_blog_attachments,
             ignore_conflicts=True
         )
-        
-    print(new_blog.uid)
     
-    new_noti = Notification.objects.create(
-        type=Notification_type.FOLLOWER_NEW_POST,
-        author=user,
-        subject='Follower\'s new post',
-        content=new_blog.uid,
+    followers = Follower.objects.filter(
+        author=user
     )
+    
+    for follower in followers:
+        follower_user = follower.follower
+        
+        new_noti = Notification.objects.create(
+            type=Notification_type.FOLLOWER_NEW_POST,
+            author=follower_user,
+            blog=new_blog,
+            subject='Có bài viết mới',
+            content=user.full_name+' vừa thêm bài viết mới',
+        )
     
     return BlogSerializer(
         instance=new_blog, 
@@ -469,8 +475,10 @@ def create_blog_like(request):
     new_noti = Notification.objects.create(
         type=Notification_type.BLOG_LIKED,
         author=user,
-        subject='Blog is liked',
-        content=blog.uid,
+        blog=blog,
+        subject='Bài viết của bạn được yêu thích',
+        content='Bài viết "'+blog.name
+            +'" của bạn đã được yêu thích bởi '+user.full_name,
     )
     
     return data
