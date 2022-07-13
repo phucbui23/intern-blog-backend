@@ -128,7 +128,7 @@ def get_matrix_blogs(request):
                 each_blog['is_liked'] = is_liked
 
         return blog_records
-
+    
     return BlogSerializer(
         instance=blog_records,
         many=True,

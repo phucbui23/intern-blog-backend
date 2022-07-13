@@ -7,26 +7,27 @@ from .models import Follower, User
 
 
 class UserSerializer(serializers.ModelSerializer):
+    avatar = AttachmentSerializer(read_only=True, many=True)
     class Meta:
         model = User
         fields = ('username', 'email', 'phone_number',
                   'full_name', 'nick_name', 'quote','avatar')
         read_only_fields = fields
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
+    # def to_representation(self, instance):
+    #     data = super().to_representation(instance)
         
-        try:    
-            avatar = Attachment.objects.get(
-                user=instance,
-            )
-            avatar_data = AttachmentSerializer(instance=avatar, many=False).data
-            avatar_data.pop('user')
-            data['avatar'] = avatar_data
-        except Attachment.DoesNotExist:
-            avatar = None
+    #     try:    
+    #         avatar = Attachment.objects.get(
+    #             user=instance,
+    #         )
+    #         avatar_data = AttachmentSerializer(instance=avatar, many=False).data
+    #         avatar_data.pop('user')
+    #         data['avatar'] = avatar_data
+    #     except Attachment.DoesNotExist:
+    #         avatar = None
             
-        return data
+    #     return data
 
 
 class FollowerSerializer(serializers.ModelSerializer):
