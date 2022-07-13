@@ -155,7 +155,7 @@ EMAIL_HOST_PASSWORD = 'dqtawgtfozgsahom'
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=14400),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=480),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 
     'ALGORITHM': 'HS256',
