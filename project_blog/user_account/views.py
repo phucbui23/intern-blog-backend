@@ -205,11 +205,11 @@ def follow_user(request):
 @paginator
 def get_user_following(request):
 
-    author=request.user
+    user=request.user
 
-    # set of users that author follows
+    # users that author follows
     following = Follower.objects.filter(
-        follower=author,
+        follower=user,
         active=True,
         follow_by=None,
     )
@@ -219,7 +219,6 @@ def get_user_following(request):
             follower = follow.author
             total_blog = Blog.get_total_blog_by_user(follower)
             most_liked_blog = BlogLike.get_most_liked_blog(follower)
-            # like = most_liked_blog.count()
 
             setattr(follow, 'total_blog', total_blog)
             setattr(follow, 'most_liked_blog', most_liked_blog)

@@ -58,6 +58,8 @@ class Blog(models.Model):
         null=True,
         blank=True,
     )
+
+
     
     @staticmethod
     def get_by_uid(uid:str):
@@ -102,8 +104,8 @@ class Blog(models.Model):
     def get_latest_blog(author:User):
         return Blog.objects.filter(author=author).order_by('-created_at').first()
 
-    # def __str__(self) -> str:
-    #     return self.name
+    def __str__(self) -> str:
+        return f"{self.name} - {self.author.email}"
 
 class BlogAttachment(models.Model):
     blog = models.ForeignKey(
@@ -260,9 +262,6 @@ class BlogLike(models.Model):
         ).order_by(
             '-like'
         ).first()
-        
-    def __str__(self) -> str:
-        return f"{self.author.full_name} -> {self.blog.name}"
 
     class Meta:
         unique_together = (
