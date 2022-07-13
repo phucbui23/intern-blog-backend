@@ -22,7 +22,7 @@ def validate_password(password):
     if (len(password) > 255 or len(password) < 8):
         raise ValidationError(INVALID_LENGTH_PASSWORD)
 
-    if (password.isdigit() or password.isalnum()):
+    if (password.isdigit()):
         raise ValidationError(INVALID_PASSWORD)
 
 
