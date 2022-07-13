@@ -24,12 +24,13 @@ from .serializers import BlogLikeSerializer, BlogSerializer
 @json_response
 @paginator
 def get_matrix_blogs(request):
-    search = request.POST.get("search", None)
+    search = request.POST.get("search", None) # search by keyword
 
     uid = request.POST.get("uid", None)
     tag = request.POST.get("tag", None)
     
-    following = request.POST.get("following", None)
+    following = request.POST.get("following", None) # get blogs of user following
+    author_email = request.POST.get("author_email", None) # get blogs of a user
 
     blog_records = Blog.objects.all()
 
@@ -88,6 +89,45 @@ def get_matrix_blogs(request):
                 to_attr='attachment'
             )
         )
+    elif author_email is not None:
+        user = request.user
+
+        # author_email = request.POST.get('author_email', None)
+        author = User.get_user(email=author_email)
+
+        author_blogs = Blog.objects.filter(
+                author=author
+            ).prefetch_related(
+                'bloglike_fk_blog'
+            ).annotate(
+                like=models.Count('bloglike_fk_blog')
+            ).order_by(
+                '-like'
+            )
+
+        blog_records = BlogSerializer(
+            instance=author_blogs,
+            many=True,
+        ).data
+
+        # check if user likes and follows blogs of the author
+        if isinstance(user, User):
+            for each_blog in blog_records:
+                is_follow = Follower.objects.filter(
+                    author=author,
+                    follower=user,
+                    follow_by=each_blog['uid'],
+                    active=True,    
+                ).exists()
+                each_blog['is_follow'] = is_follow
+
+                is_liked = BlogLike.objects.filter(
+                    author=user,
+                    blog=each_blog['uid'],
+                ).exists()
+                each_blog['is_liked'] = is_liked
+
+        return blog_records
 
     return BlogSerializer(
         instance=blog_records,
@@ -467,50 +507,6 @@ def get_user_blog(request):
         instance=blogs,
         many=True
     ).data
-
-
-@api_view()
-@json_response
-@paginator
-def get_author_blog(request):
-    user = request.user
-    author_email = request.GET.get('author_email', None)
-
-    author = User.get_user(email=author_email)
-
-    blogs_data = Blog.objects.filter(
-            author=author
-        ).prefetch_related(
-            'bloglike_fk_blog'
-        ).annotate(
-            like=models.Count('bloglike_fk_blog')
-        ).order_by(
-            '-like'
-        )
-
-    data = BlogSerializer(
-        instance=blogs_data,
-        many=True,
-    ).data
-
-    if isinstance(user, User):
-        for each_blog in data:
-            is_follow = Follower.objects.filter(
-                author=author,
-                follower=user,
-                follow_by=each_blog['uid'],
-                active=True,    
-            ).exists()
-            each_blog['is_follow'] = is_follow
-
-            is_liked = BlogLike.objects.filter(
-                author=user,
-                blog=each_blog['uid'],
-            ).exists()
-            each_blog['is_liked'] = is_liked
-
-    return data
-
 
 @api_view()
 @json_response
