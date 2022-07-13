@@ -56,9 +56,15 @@ def send_email(user, type_email):
             if (not blog):
                 return None
 
-            url = f'{DOMAIN}/detail?uid={blog.uid}'
             subject = f'Lastest Blog'
-            body = f'{user.username} just post new blogs: {url}'
+            body = render_to_string(
+                template_name='follower_post.html',
+                context={
+                    'user': user,
+                    'domain': DOMAIN,
+                    'uid': blog.uid,
+                }
+            )
             to_user = followers
 
         else:
