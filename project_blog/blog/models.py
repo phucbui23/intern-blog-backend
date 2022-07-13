@@ -104,8 +104,8 @@ class Blog(models.Model):
     def get_latest_blog(author:User):
         return Blog.objects.filter(author=author).order_by('-created_at').first()
 
-    def __str__(self) -> str:
-        return f"{self.name} - {self.author.email}"
+    # def __str__(self) -> str:
+    #     return f"{self.name} - {self.author.email}"
 
 class BlogAttachment(models.Model):
     blog = models.ForeignKey(
