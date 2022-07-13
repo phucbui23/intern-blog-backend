@@ -1,0 +1,7 @@
+<h1> Hi {{user.username}} </h1>
+<p> Please click this link to reset your password: </p>
+
+<p> {{domain}}/reset?token={{token}} </p>
+
+{% load static %}
+<img src={% static 'mail_picture.png' %} />

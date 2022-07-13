@@ -33,17 +33,17 @@ def get_user_info(request):
             is_followed = Follower.objects.filter(
                 author=author,
                 follower=user,
-                active=True,    
+                active=True,
             ).exists()
             data['is_followed'] = is_followed
 
     else:
-        blog =  Blog.objects.filter(author=user, is_published=True)
+        blog = Blog.objects.filter(author=user, is_published=True)
         blog_num = blog.count()
         like_num = 0
         for each_blog in blog:
             like_num += BlogLike.objects.filter(blog=each_blog).count()
-            
+
         follow_num = Follower.objects.filter(author=user, active=True).count()
 
         data = UserSerializer(
@@ -78,8 +78,8 @@ def sign_up(request):
     except NotFound:
 
         username = email.split('@')[0]
-        user = User.objects.create( 
-            email=email, 
+        user = User.objects.create(
+            email=email,
             username=username,
             full_name=fullname,
             nick_name=nickname,
@@ -87,9 +87,9 @@ def sign_up(request):
             is_superuser=False,
             is_admin=False,
         )
-        
+
         send_email(
-            user=user, 
+            user=user,
             type_email=Type.ACTIVATE,
         )
 
@@ -107,11 +107,11 @@ def edit_profile(request):
     phone_number = request.POST.get('phone_number', user.phone_number)
     full_name = request.POST.get('full_name', user.full_name)
     nick_name = request.POST.get('nick_name', user.nick_name)
-    
+
     validate_phone_number(phone_number=phone_number)
     validate_fullname(full_name=full_name)
     validate_nickname(nick_name=nick_name)
-    
+
     user.phone_number = phone_number
     user.full_name = full_name
     user.nick_name = nick_name
@@ -134,15 +134,14 @@ def change_password(request):
     new_password = request.POST.get('new_password', None)
     new_password_again = request.POST.get('new_password_again', None)
 
-    validate_password(current_password)
     validate_password(new_password)
 
     if not user.check_password(current_password):
         raise ValidationError(WRONG_PASSWORD)
-    
+
     if new_password != new_password_again:
         raise ValidationError(NOT_SAME_PASSWORD)
-    
+
     user.set_password(new_password)
     user.save()
 
@@ -150,7 +149,7 @@ def change_password(request):
         instance=user,
         many=False
     ).data
-    
+
 
 @api_view(['PUT'])
 @json_response
@@ -160,7 +159,7 @@ def follow_by_blog(request):
         blog = Blog.objects.get(uid=uid_blog)
     except Blog.DoesNotExist:
         raise NotFound(NOT_FOUND_BLOG)
-    
+
     blog_author = blog.author
 
     try:
@@ -195,7 +194,7 @@ def follow_user(request):
         author = User.get_user(email=author_email)
     except User.DoesNotExist:
         raise NotFound(NOT_FOUND_USER)
-    
+
     try:
         data = Follower.objects.get(
             author=author,
@@ -219,12 +218,13 @@ def follow_user(request):
         many=False,
     ).data
 
+
 @api_view(['GET'])
 @json_response
 @paginator
 def get_user_following(request):
 
-    user=request.user
+    user = request.user
 
     # users that author follows
     following = Follower.objects.filter(

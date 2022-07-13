@@ -1,0 +1,7 @@
+<h1> Hi {{user.username}} </h1>
+<p> Please click this link below to verify your account: </p>
+
+<p> {{domain}}/activateaccount?token={{token}} </p>
+
+{% load static %}
+<img src={% static 'mail_picture.png' %} />

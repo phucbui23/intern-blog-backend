@@ -37,7 +37,7 @@ def activate(request):
     if (expr < datetime.now()):
         raise ValidationError(EXPIRED_TOKEN)
 
-    token.active = True
+    token.active = False
     token.updated_at = datetime.now()
     token.save()
 
@@ -142,7 +142,7 @@ def reset_password(request):
     if ( expr < datetime.now()):
         raise ValidationError(EXPIRED_TOKEN)
     
-    token.active= True
+    token.active = False
     token.updated_at = datetime.now()
     token.save()
 
