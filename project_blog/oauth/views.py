@@ -75,7 +75,6 @@ def log_in(request):
     password = request.POST.get('password', None)
 
     validate_email(email=email)
-    validate_password(password=password)
 
     user = User.get_user(email=email) 
 
