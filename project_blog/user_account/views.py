@@ -20,8 +20,7 @@ from .serializers import FollowerSerializer, UserSerializer
 @json_response
 def get_user_info(request):
     author_email = request.GET.get('author_email', None)
-    user = User.objects.get(email=request.user.email)
-
+    user = request.user
     if (author_email):
         author = User.get_user(email=author_email)
 
@@ -30,7 +29,7 @@ def get_user_info(request):
             many=False,
         ).data
 
-        if (request.user):
+        if (isinstance(user, User)):
             is_followed = Follower.objects.filter(
                 author=author,
                 follower=user,
@@ -201,6 +200,7 @@ def follow_user(request):
         data = Follower.objects.get(
             author=author,
             follower=request.user,
+            follow_by=None,
         )
 
         data.active = not data.active
@@ -210,6 +210,7 @@ def follow_user(request):
         data = Follower.objects.create(
             author=author,
             follower=request.user,
+            follow_by=None,
             active=True,
         )
 
