@@ -6,7 +6,7 @@ from attachment.serializers import AttachmentSerializer
 from blog.models import Blog, BlogLike
 from blog.serializers import BlogSerializer
 from user_account.models import Follower
-from utils.api_decorator import json_response, notification_paginator
+from utils.api_decorator import json_response, paginator
 from utils.messages import BLOG_NOT_EXIST
 
 from .models import Notification
@@ -15,7 +15,7 @@ from .serializers import NotificationSerializer
 
 @api_view(['POST'])
 @json_response
-@notification_paginator
+@paginator
 def get_notifications(request):
     user = request.user
     
@@ -23,20 +23,26 @@ def get_notifications(request):
         author=user
     ).order_by('-sended_at')
     
-    # get number of notification that haven't seen
-    not_seen = notifications.filter(
-        is_seen=False,
-    ).count()
-    
     # get lists of notifications of that user
     data = NotificationSerializer(
         notifications,
         many=True
     ).data
     
-    # data['not_seen'] = not_seen
-    
     return data
+
+
+@api_view(['GET'])
+@json_response
+def num_not_seen_noti(request):
+    user = request.user
+    
+    not_seen = Notification.objects.filter(
+        author=user,
+        is_seen=False,
+    ).count()
+    
+    return not_seen
 
 
 @api_view(['POST'])
