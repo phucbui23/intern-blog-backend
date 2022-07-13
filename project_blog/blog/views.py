@@ -156,7 +156,7 @@ def create_blog(request):
         raise ValidationError(MAX_LENGTH_BLOG_CONTENT)
     
     tags_name = data.pop('tags', [])
-    attachment_uid = data.pop('attachments', [])
+    attachment_file_path = data.pop('attachments', [])
     
     new_blog = Blog.objects.create(
         **data,
@@ -186,8 +186,8 @@ def create_blog(request):
         )
         
     # xu ly attachments
-    if (len(attachment_uid) > 0):        
-        new_attachment = Attachment.objects.get(uid=attachment_uid)
+    if (len(attachment_file_path) > 0):        
+        new_attachment = Attachment.objects.get(file_path=attachment_file_path)
                 
         BlogAttachment.objects.create(
             blog=new_blog,
@@ -209,6 +209,7 @@ def create_blog(request):
             type=Notification_type.FOLLOWER_NEW_POST,
             author=follower_user,
             blog=new_blog,
+            is_success=True,
             subject='Có bài viết mới',
             content=user.full_name+' vừa thêm bài viết mới',
         )
@@ -374,26 +375,26 @@ def edit_blog(request):
     attachments_uid = data.pop('attachments', [])
     
     current_blog_attachments = BlogAttachment.objects.filter(
-        attachment__uid__in=attachments_uid,
+        attachment__file_path__in=attachments_uid,
         blog=blog,
     )
         
-    current_blog_attachments_uid = current_blog_attachments.values_list(
-        'attachment__uid',
+    current_blog_attachments_file_path = current_blog_attachments.values_list(
+        'attachment__file_path',
         flat=True,
     )
 
     remove_blog_attachments = BlogAttachment.objects.filter(
         blog=blog
     ).exclude(
-        attachment__uid__in=attachments_uid
+        attachment__file_path__in=attachments_uid
     )
         
     new_blog_attachments = []
         
-    for attachment_uid in attachments_uid:
-        if not (attachment_uid in current_blog_attachments_uid):
-            new_attachment = Attachment.objects.get(uid=attachment_uid)
+    for attachment_file_path in attachments_uid:
+        if not (attachment_file_path in current_blog_attachments_file_path):
+            new_attachment = Attachment.objects.get(file_path=attachment_file_path)
             
             new_blog_attachments.append(
                 BlogAttachment(
@@ -449,6 +450,7 @@ def create_blog_like(request):
         type=Notification_type.BLOG_LIKED,
         author=user,
         blog=blog,
+        is_success=True,
         subject='Bài viết của bạn được yêu thích',
         content='Bài viết "'+blog.name
             +'" của bạn đã được yêu thích bởi '+user.full_name,

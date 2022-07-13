@@ -26,6 +26,26 @@ def paginator(func):
         
     return wrapper
 
+def notification_paginator(func):
+    def wrapper(*args, **kwargs):
+        data = func(*args, **kwargs)
+        _paginator = Paginator(
+            object_list=data,
+            per_page=DEFAULT_ITEMS_PER_PAGE,            
+        )
+        page = args[0].GET.get('page')
+        page_objects = _paginator.get_page(page)
+
+        return_data = {
+            'objects': page_objects.object_list,
+            'total_record': _paginator.count,
+            'total_page': page_objects.paginator.num_pages,
+            'current_page': page_objects.number,
+        }
+        return return_data
+    
+    return wrapper
+
 def json_response(func):
     def wrapper(*args, **kwargs):
         try:
