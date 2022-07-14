@@ -2,7 +2,7 @@ from attachment.models import Attachment
 from attachment.serializers import AttachmentSerializer
 
 from django.db import models
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch, Q, Count
 from django.forms import ValidationError
 from rest_framework.decorators import api_view
 
@@ -48,10 +48,6 @@ def get_matrix_blogs(request):
         blog_records = blog_records.filter(
             uid=uid,
         )
-        return BlogSerializer(
-            instance=blog_records,
-            many=False,
-        ).data
 
     elif tag is not None:
         blog_records = Blog.objects.prefetch_related(
@@ -128,6 +124,25 @@ def get_matrix_blogs(request):
                 each_blog['is_liked'] = is_liked
 
         return blog_records
+
+    blog_records = blog_records.prefetch_related(
+        Prefetch(
+            'blogtag_fk_blog',
+            to_attr='tags'
+        ),
+        Prefetch(
+            'bloglike_fk_blog',
+            to_attr='likes'
+        ),
+        Prefetch(
+            'blogattachment_fk_blog',
+            to_attr='attachment'
+        ),
+    ).annotate(
+        num_of_likes=Count('bloglike_fk_blog')
+    ).select_related(
+        'author',
+    )
 
     return BlogSerializer(
         instance=blog_records,

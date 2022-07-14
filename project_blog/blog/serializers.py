@@ -26,58 +26,15 @@ class BlogSerializer(serializers.ModelSerializer):
     tags = TagSerializer(read_only=True, many=True)
     attachment = AttachmentSerializer(read_only=True, many=False)
     author = UserSerializer(read_only=True, many=False)
+    likes = serializers.IntegerField(read_only=True, source='num_of_likes')
 
     class Meta:
         model = Blog
         fields = (
             'uid', 'name', 'author', 'tags', 'attachment' ,'content',
-            'is_published', 'created_at',
+            'is_published', 'created_at', 'likes',
         )
         read_only_field = fields
-        
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        
-        try:
-            blog_attachment = BlogAttachment.objects.filter(
-                blog=instance
-            ).first()
-            
-            if blog_attachment != None:
-                thumbnail = blog_attachment.attachment
-                data['thumbnail'] = AttachmentSerializer(
-                    instance=thumbnail, 
-                    many=False
-                ).data
-            else:
-                data['thumbnail'] = None
-        except Attachment.DoesNotExist:
-            thumbnail = None
-            
-        try:
-            tags = Tag.objects.prefetch_related(
-                'blogtag_fk_tag'
-            ).filter(
-                blogtag_fk_tag__blog=instance
-            )
-            
-            data['tags'] = TagSerializer(
-                instance=tags,
-                many=True
-            ).data
-        except Tag.DoesNotExist:
-            tags = None  
-            
-        try:
-            likes = BlogLike.objects.filter(
-                blog=instance
-            ).count()
-        except BlogLike.DoesNotExist:
-            likes = 0
-
-        data['likes'] = likes
-            
-        return data
         
 class BlogAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
