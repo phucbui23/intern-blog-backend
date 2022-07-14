@@ -31,6 +31,7 @@ def get_matrix_blogs(request):
     
     following = request.POST.get("following", None) # get blogs of user following
     author_email = request.POST.get("author_email", None) # get blogs of a user
+    most_liked_blog = request.POST.get("most_liked", None)  # get most liked blog
 
     blog_records = Blog.objects.all()
 
@@ -44,19 +45,19 @@ def get_matrix_blogs(request):
             Q(content__icontains=search)
         )
 
-    if uid is not None:
+    if (uid is not None):
         blog_records = blog_records.filter(
             uid=uid,
         )
 
-    elif tag is not None:
+    elif (tag is not None):
         blog_records = Blog.objects.prefetch_related(
             'blogtag_fk_blog'
         ).filter(
             blogtag_fk_blog__tag__name__icontains=tag
         ).order_by('-updated_at')
 
-    elif following is not None:
+    elif (following is not None):
         user = request.user
 
         user_following = Follower.objects.filter(
@@ -74,7 +75,7 @@ def get_matrix_blogs(request):
 
         blog_records = temp_blog_records.order_by('-created_at')
 
-    elif search is not None:
+    elif (search is not None):
         blog_records = blog_records.prefetch_related(
             Prefetch(
                 'blogtag_fk_blog',
@@ -86,13 +87,11 @@ def get_matrix_blogs(request):
             )
         )
         
-    elif author_email is not None:
-        user = request.user
-
+    elif (author_email is not None):
         # author_email = request.POST.get('author_email', None)
         author = User.get_user(email=author_email)
 
-        author_blogs = Blog.objects.filter(
+        blog_records = Blog.objects.filter(
                 author=author
             ).prefetch_related(
                 'bloglike_fk_blog'
@@ -102,34 +101,12 @@ def get_matrix_blogs(request):
                 '-like'
             )
 
-        blog_records = BlogSerializer(
-            instance=author_blogs,
-            many=True,
-        ).data
-
-        # check if user likes and follows blogs of the author
-        if isinstance(user, User):
-            for each_blog in blog_records:
-                is_follow = Follower.objects.filter(
-                    author=author,
-                    follower=user,
-                    follow_by=each_blog['uid'],
-                    active=True,    
-                ).exists()
-                each_blog['is_follow'] = is_follow
-
-                is_liked = BlogLike.objects.filter(
-                    author=user,
-                    blog=each_blog['uid'],
-                ).exists()
-                each_blog['is_liked'] = is_liked
-            
-        else:
-            for each_blog in blog_records:
-                each_blog['is_follow'] = False
-                each_blog['is_liked'] = False
-
-        return blog_records
+    elif (most_liked_blog is not None):
+        blog_records = Blog.objects.prefetch_related(
+            'bloglike_fk_blog'
+        ).annotate(
+            like=models.Count('bloglike_fk_blog')
+        ).order_by('-like')
 
     blog_records = blog_records.prefetch_related(
         Prefetch(
@@ -150,10 +127,28 @@ def get_matrix_blogs(request):
         'author',
     )
 
-    return BlogSerializer(
+    blog_records = BlogSerializer(
         instance=blog_records,
         many=True,
     ).data
+    
+    user = request.user
+    if (isinstance(user, User)):
+        for each_blog in blog_records:
+            is_follow = Follower.objects.filter(
+                follower=user,
+                follow_by=each_blog['uid'],
+                active=True,    
+            ).exists()
+            each_blog['is_follow'] = is_follow
+            
+            is_liked = BlogLike.objects.filter(
+                author=user,
+                blog=each_blog['uid'],
+            ).exists()
+            each_blog['is_liked'] = is_liked
+
+    return blog_records
 
 
 @api_view(['POST'])
