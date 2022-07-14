@@ -22,6 +22,9 @@ def validate_password(password):
     if (len(password) > 255 or len(password) < 8):
         raise ValidationError(INVALID_LENGTH_PASSWORD)
 
+    if (password.isdigit()):
+        raise ValidationError(INVALID_PASSWORD)
+
 
 def validate_fullname(full_name):
     if (not full_name):

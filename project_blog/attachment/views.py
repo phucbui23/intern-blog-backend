@@ -18,10 +18,10 @@ def create_attachment(request):
 
     fs = FileSystemStorage(location='static/')
     fname = fs.save(file.name, file)
-    # file_name = data.pop('file', '') + str(datetime.now())
+    file_name = f"{file.name}{datetime.now()}"
 
     new_attachment = Attachment.objects.create(
-        file_name=fname,
+        file_name=file_name,
         display_name=file.name,
         file_path=fs.url(fname), 
         **data,
@@ -35,10 +35,11 @@ def create_attachment(request):
 
     return data
         
-# @api_view
-# @json_response
-# def get_attachment(request):
-#     ...
+@api_view
+@json_response
+def get_attachment(request):
+    user = request.user
+
 
 # @api_view(['PUT'])
 # @json_response

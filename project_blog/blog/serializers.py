@@ -24,7 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class BlogSerializer(serializers.ModelSerializer):
     tags = TagSerializer(read_only=True, many=True)
-    attachment = AttachmentSerializer(read_only=True, many=False)
+    attachment = AttachmentSerializer(read_only=True, many=True)
     author = UserSerializer(read_only=True, many=False)
     likes = serializers.IntegerField(read_only=True, source='num_of_likes')
 

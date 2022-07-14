@@ -26,6 +26,7 @@ def paginator(func):
         
     return wrapper
 
+
 def json_response(func):
     def wrapper(*args, **kwargs):
         try:

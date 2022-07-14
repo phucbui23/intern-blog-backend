@@ -1,10 +1,11 @@
 from django.core.mail import EmailMessage
 from django.forms import ValidationError
+from django.template.loader import render_to_string
 from email_logs.models import EmailLogs
 from oauth.models import UserActivation, ResetPassword
 from blog.models import Blog
 from user_account.models import Follower
-from utils.messages import INVALID_TYPE, SEND_FAIL
+from .messages import INVALID_TYPE, SEND_FAIL
 from .gen_token import gen_token
 from .constant import DOMAIN
 from .enums import Type
@@ -13,9 +14,15 @@ def send_email(user, type_email):
     token = gen_token()
     try:
         if (type_email == Type.ACTIVATE):
-            url = f'{DOMAIN}/activateaccount?token={token}'
             subject = 'Activate Account'
-            body = f'Hi {user.full_name} Use link below to verify your email: {url}'
+            body = render_to_string(
+                template_name='activate.html',
+                context={
+                    'user': user,
+                    'domain': DOMAIN,
+                    'token': token,
+                }
+            )
             to_user = [user.email]
             UserActivation.objects.create(
                 author=user,
@@ -23,9 +30,15 @@ def send_email(user, type_email):
                 active=True,
             )
         elif (type_email == Type.RESET_PASSWORD):   
-            url = f'{DOMAIN}/reset?token={token}'
             subject = 'Reset Password'
-            body = f'Hi {user.full_name} Please click this link to reset your password: {url}'
+            body = render_to_string(
+                template_name='reset.html',
+                context={
+                    'user': user,
+                    'domain': DOMAIN,
+                    'token': token,
+                }
+            )
             to_user = [user.email]
             ResetPassword.objects.create(
                 author=user,
@@ -43,9 +56,15 @@ def send_email(user, type_email):
             if (not blog):
                 return None
 
-            url = f'{DOMAIN}/detail?uid={blog.uid}'
             subject = f'Lastest Blog'
-            body = f'{user.username} just post new blogs: {url}'
+            body = render_to_string(
+                template_name='follower_post.html',
+                context={
+                    'user': user,
+                    'domain': DOMAIN,
+                    'uid': blog.uid,
+                }
+            )
             to_user = followers
 
         else:
@@ -74,6 +93,7 @@ def send_email(user, type_email):
             body=body, 
             to=to_user,
         )
+        email.content_subtype = 'html'
         email.send()
     except: 
         raise ValueError(SEND_FAIL)
