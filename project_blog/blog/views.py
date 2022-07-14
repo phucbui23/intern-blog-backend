@@ -181,7 +181,7 @@ def create_blog(request):
         raise ValidationError(MAX_LENGTH_BLOG_CONTENT)
     
     tags_name = data.pop('tags', [])
-    attachment_file_path = data.pop('attachments', [])
+    attachment_file_path = data.pop('attachment', [])
     
     new_blog = Blog.objects.create(
         **data,
@@ -311,59 +311,55 @@ def get_blogs_by_tag(request):
 @api_view(['POST'])
 @json_response
 def get_blog_detail(request):
-    bloguid = request.POST.get('uid', None)
+    uid = request.POST.get("uid", None)
+    
+    blog_records = Blog.objects.all()
+    
+    blog_records = blog_records.filter(
+        uid=uid,
+    )
+    
+    blog_records = blog_records.prefetch_related(
+        Prefetch(
+            'blogtag_fk_blog',
+            to_attr='tags'
+        ),
+        Prefetch(
+            'bloglike_fk_blog',
+            to_attr='likes'
+        ),
+        Prefetch(
+            'blogattachment_fk_blog',
+            to_attr='attachment'
+        ),
+    ).annotate(
+        num_of_likes=Count('bloglike_fk_blog')
+    ).select_related(
+        'author',
+    )
 
-    try:
-        blog = Blog.objects.get(pk=bloguid)
-    except Blog.DoesNotExist:
-        raise ValidationError(BLOG_NOT_EXIST)
-    
-    data = BlogSerializer(blog).data
-    
-    # get attachments in a blog
-    attachments = Attachment.objects.prefetch_related(
-        'blogattachment_fk_attachment'
-    ).filter(
-        blogattachment_fk_attachment__blog=blog
-    )
-    
-    data['attachments'] = AttachmentSerializer(
-        instance=attachments,
-        many=True
-    ).data
-    
-    # get author detail
-    author = User.objects.get(
-        id=blog.author.id
-    )
-    
-    data['author'] = UserSerializer(
-        instance=author,
-        many=False
+    blog_records = BlogSerializer(
+        instance=blog_records,
+        many=True,
     ).data
     
     user = request.user
+    if (isinstance(user, User)):
+        for each_blog in blog_records:
+            is_follow = Follower.objects.filter(
+                follower=user,
+                follow_by=each_blog['uid'],
+                active=True,    
+            ).exists()
+            each_blog['is_follow'] = is_follow
 
-    if isinstance(user, User):
-        is_followed = Follower.objects.filter(
-            author=author,
-            follower=user,
-            follow_by=blog,
-            active=True,
-        ).exists()
-        data['is_followed'] = is_followed
+            is_liked = BlogLike.objects.filter(
+                author=user,
+                blog=each_blog['uid'],
+            ).exists()
+            each_blog['is_liked'] = is_liked
 
-        is_liked = BlogLike.objects.filter(
-            author=user,
-            blog=blog,
-        ).exists()
-        data['is_liked'] = is_liked
-        
-    else:
-        data['is_followed'] = False
-        data['is_liked'] = False
-
-    return data
+    return blog_records
 
 
 @api_view(['POST'])
