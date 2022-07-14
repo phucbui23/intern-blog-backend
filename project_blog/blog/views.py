@@ -318,7 +318,7 @@ def get_blog_detail(request):
         ),
         Prefetch(
             'blogattachment_fk_blog',
-            to_attr='attachment'
+            to_attr='attachments'
         ),
     ).annotate(
         num_of_likes=Count('bloglike_fk_blog')
