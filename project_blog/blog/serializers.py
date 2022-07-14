@@ -30,14 +30,14 @@ class BlogAttachmentSerializer(serializers.ModelSerializer):
 
 class BlogSerializer(serializers.ModelSerializer):
     tags = BlogTagSerializer(read_only=True, many=True)
-    attachment = BlogAttachmentSerializer(read_only=True, many=True)
+    attachments = BlogAttachmentSerializer(read_only=True, many=True)
     author = UserSerializer(read_only=True, many=False)
     likes = serializers.IntegerField(read_only=True, source='num_of_likes')
 
     class Meta:
         model = Blog
         fields = (
-            'uid', 'name', 'author', 'tags', 'attachment' ,'content',
+            'uid', 'name', 'author', 'tags', 'attachments' ,'content',
             'is_published', 'created_at', 'likes',
         )
         read_only_field = fields

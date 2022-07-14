@@ -50,7 +50,7 @@ def get_matrix_blogs(request):
             ),
             Prefetch(
                 'blogattachment_fk_blog',
-                to_attr='attachment'
+                to_attr='attachments'
             )
         )
 
@@ -83,18 +83,6 @@ def get_matrix_blogs(request):
             )
 
         blog_records = temp_blog_records.order_by('-created_at')
-
-    # elif (search is not None):
-    #     blog_records = blog_records.prefetch_related(
-    #         Prefetch(
-    #             'blogtag_fk_blog',
-    #             to_attr='tags'
-    #         ),
-    #         Prefetch(
-    #             'blogattachment_fk_blog',
-    #             to_attr='attachment'
-    #         )
-    #     )
         
     elif (author_email is not None):
         # author_email = request.POST.get('author_email', None)
@@ -128,7 +116,7 @@ def get_matrix_blogs(request):
         ),
         Prefetch(
             'blogattachment_fk_blog',
-            to_attr='attachment'
+            to_attr='attachments'
         ),
     ).annotate(
         num_of_likes=Count('bloglike_fk_blog')
@@ -181,7 +169,7 @@ def create_blog(request):
         raise ValidationError(MAX_LENGTH_BLOG_CONTENT)
     
     tags_name = data.pop('tags', [])
-    attachment_file_path = data.pop('attachment', [])
+    attachment_file_path = data.pop('attachments', [])
     
     new_blog = Blog.objects.create(
         **data,
@@ -564,11 +552,11 @@ def get_user_blog(request):
         ),
         Prefetch(
             'blogattachment_fk_blog',
-            to_attr='attachment'
+            to_attr='attachments'
         ),
     ).annotate(
         num_of_likes=Count('bloglike_fk_blog')
-    )
+    ).order_by('-created_at')
 
     data = BlogSerializer(
         instance=blogs,
@@ -592,7 +580,7 @@ def get_new_blog(request):
         ),
         Prefetch(
             'blogattachment_fk_blog',
-            to_attr='attachment'
+            to_attr='attachments'
         ),
     ).annotate(
         num_of_likes=Count('bloglike_fk_blog')
@@ -629,7 +617,7 @@ def get_blog_likes(request):
         ),
         Prefetch(
             'blogattachment_fk_blog',
-            to_attr='attachment'
+            to_attr='attachments'
         ),
     )
     
