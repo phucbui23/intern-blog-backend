@@ -21,10 +21,16 @@ class UserSerializer(serializers.ModelSerializer):
                   'full_name', 'nick_name', 'quote','avatar')
         read_only_fields = fields
 
+class BlogAttachmentSerializer(serializers.ModelSerializer):
+    attachment = AttachmentSerializer(read_only=True)
+    class Meta:
+        model = BlogAttachment
+        fields = ('attachment',)
+        read_only_fields = ('blog', 'attachment',)
 
 class BlogSerializer(serializers.ModelSerializer):
     tags = BlogTagSerializer(read_only=True, many=True)
-    attachment = AttachmentSerializer(read_only=True, many=True)
+    attachment = BlogAttachmentSerializer(read_only=True, many=True)
     author = UserSerializer(read_only=True, many=False)
     likes = serializers.IntegerField(read_only=True, source='num_of_likes')
 
@@ -36,12 +42,6 @@ class BlogSerializer(serializers.ModelSerializer):
         )
         read_only_field = fields
         
-class BlogAttachmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BlogAttachment
-        fields = ('blog', 'attachment', 'created_at',
-                  'updated_at',)
-        read_only_fields = ('blog', 'attachment',)
             
 class BlogHistorySerializer(serializers.ModelSerializer):
     class Meta:

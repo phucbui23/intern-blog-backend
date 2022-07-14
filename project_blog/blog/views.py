@@ -619,7 +619,7 @@ def get_blog_likes(request):
         raise ValidationError(
             message=BLOG_NOT_EXIST
         )
-        
+    
     blog_likes = BlogLike.objects.filter(
         blog=blog
     ).prefetch_related(
@@ -636,7 +636,7 @@ def get_blog_likes(request):
             to_attr='attachment'
         ),
     )
-        
+    
     return BlogLikeSerializer(
         instance=blog_likes,
         many=True
