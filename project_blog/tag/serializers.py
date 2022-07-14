@@ -13,10 +13,8 @@ class TagSerializer(serializers.ModelSerializer):
         read_only_fields = fields
         
 class BlogTagSerializer(serializers.ModelSerializer):
+    tag = TagSerializer(read_only=True, many=False)
     class Meta:
         model = BlogTag
-        fields = (
-            'blog', 'tag', 
-            'created_at','updated_at',
-        )
+        fields = ('tag',)
         read_only_fields = ('blog', 'tag',)

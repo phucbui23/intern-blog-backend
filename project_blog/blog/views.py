@@ -43,6 +43,15 @@ def get_matrix_blogs(request):
             Q(uid__icontains=search) |
             Q(name__icontains=search) |
             Q(content__icontains=search)
+        ).prefetch_related(
+            Prefetch(
+                'blogtag_fk_blog',
+                to_attr='tags'
+            ),
+            Prefetch(
+                'blogattachment_fk_blog',
+                to_attr='attachment'
+            )
         )
 
     if (uid is not None):
@@ -75,17 +84,17 @@ def get_matrix_blogs(request):
 
         blog_records = temp_blog_records.order_by('-created_at')
 
-    elif (search is not None):
-        blog_records = blog_records.prefetch_related(
-            Prefetch(
-                'blogtag_fk_blog',
-                to_attr='tags'
-            ),
-            Prefetch(
-                'blogattachment_fk_blog',
-                to_attr='attachment'
-            )
-        )
+    # elif (search is not None):
+    #     blog_records = blog_records.prefetch_related(
+    #         Prefetch(
+    #             'blogtag_fk_blog',
+    #             to_attr='tags'
+    #         ),
+    #         Prefetch(
+    #             'blogattachment_fk_blog',
+    #             to_attr='attachment'
+    #         )
+    #     )
         
     elif (author_email is not None):
         # author_email = request.POST.get('author_email', None)
@@ -141,7 +150,7 @@ def get_matrix_blogs(request):
                 active=True,    
             ).exists()
             each_blog['is_follow'] = is_follow
-            
+
             is_liked = BlogLike.objects.filter(
                 author=user,
                 blog=each_blog['uid'],
@@ -545,22 +554,53 @@ def delete_blog(request):
 @paginator
 def get_user_blog(request):
     user = request.user
-
+    
     blogs = Blog.objects.filter(
         author=user,
+    ).prefetch_related(
+        Prefetch(
+            'blogtag_fk_blog',
+            to_attr='tags'
+        ),
+        Prefetch(
+            'bloglike_fk_blog',
+            to_attr='likes'
+        ),
+        Prefetch(
+            'blogattachment_fk_blog',
+            to_attr='attachment'
+        ),
+    ).annotate(
+        num_of_likes=Count('bloglike_fk_blog')
     )
 
-    return BlogSerializer(
+    data = BlogSerializer(
         instance=blogs,
         many=True
     ).data
 
+    return data
 
 @api_view()
 @json_response
 @paginator
 def get_new_blog(request):
-    blogs = Blog.objects.all().order_by('-created_at')
+    blogs = Blog.objects.all().prefetch_related(
+        Prefetch(
+            'blogtag_fk_blog',
+            to_attr='tags'
+        ),
+        Prefetch(
+            'bloglike_fk_blog',
+            to_attr='likes'
+        ),
+        Prefetch(
+            'blogattachment_fk_blog',
+            to_attr='attachment'
+        ),
+    ).annotate(
+        num_of_likes=Count('bloglike_fk_blog')
+    ).order_by('-created_at')
 
     return BlogSerializer(
         instance=blogs,
@@ -582,6 +622,19 @@ def get_blog_likes(request):
         
     blog_likes = BlogLike.objects.filter(
         blog=blog
+    ).prefetch_related(
+        Prefetch(
+            'blogtag_fk_blog',
+            to_attr='tags'
+        ),
+        Prefetch(
+            'bloglike_fk_blog',
+            to_attr='likes'
+        ),
+        Prefetch(
+            'blogattachment_fk_blog',
+            to_attr='attachment'
+        ),
     )
         
     return BlogLikeSerializer(
